@@ -1,0 +1,54 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  ParseIntPipe,
+} from '@nestjs/common';
+import { CategoryService } from './category.service';
+import * as createCategoryDto_1 from './dto/create-category.dto';
+import * as updateCategoryDto_1 from './dto/update-category.dto';
+import { SuccessResponse } from '../common/utils/success-response';
+import { Category } from './entities/category.entity';
+
+@Controller('classification/categories')
+export class CategoryController {
+  constructor(private readonly categoryService: CategoryService) {}
+
+  @Post()
+  create(
+    @Body() createCategoryDto: createCategoryDto_1.CreateCategoryDto,
+  ): Promise<SuccessResponse<Category>> {
+    return this.categoryService.create(createCategoryDto);
+  }
+
+  @Get()
+  findAll(): Promise<SuccessResponse<Category[]>> {
+    return this.categoryService.findAll();
+  }
+
+  @Get(':id')
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<SuccessResponse<Category>> {
+    return this.categoryService.findOne(id);
+  }
+
+  @Patch(':id')
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateCategoryDto: updateCategoryDto_1.UpdateCategoryDto,
+  ): Promise<SuccessResponse<Category>> {
+    return this.categoryService.update(id, updateCategoryDto);
+  }
+
+  @Delete(':id')
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<SuccessResponse<null>> {
+    return this.categoryService.remove(id);
+  }
+}
