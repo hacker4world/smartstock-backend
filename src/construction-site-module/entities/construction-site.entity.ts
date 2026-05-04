@@ -21,7 +21,7 @@ export class ConstructionSite {
   address: string;
 
   @ManyToOne(() => Account, { nullable: false })
-  @JoinColumn({ name: 'manager_id' })
+  @JoinColumn({ name: 'manager_id' }) 
   manager: Account;
 
   @CreateDateColumn()

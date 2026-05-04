@@ -8,6 +8,7 @@ import { ClassificationModule } from './classification-module/classification.mod
 import { SupplierManufacturerModule } from './supplier-manufacturer-module/supplier-manufacturer.module';
 import { AccountsModule } from './accounts-module/accounts.module';
 import { ConstructionSiteModule } from './construction-site-module/construction-site.module';
+import { ProductModule } from './product-module/product.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { ConstructionSiteModule } from './construction-site-module/construction-
     SupplierManufacturerModule,
     AccountsModule,
     ConstructionSiteModule,
+    ProductModule,
   ],
   controllers: [AppController],
   providers: [AppService],
