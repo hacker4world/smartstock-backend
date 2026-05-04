@@ -1,10 +1,14 @@
 import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 
-export class UpdateWarehouseDto {
+export class UpdateManufacturerDto {
   @IsOptional()
   @IsString()
   @IsNotEmpty()
   name?: string;
+
+  @IsOptional()
+  @IsString()
+  contact?: string;
 
   @IsOptional()
   @IsString()

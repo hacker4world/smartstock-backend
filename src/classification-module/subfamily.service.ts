@@ -27,7 +27,7 @@ export class SubfamilyService {
     });
     if (!family) {
       throw new NotFoundException(
-        `Family with ID ${createSubfamilyDto.familyId} not found`,
+        `Famille avec l'ID ${createSubfamilyDto.familyId} introuvable`,
       );
     }
 
@@ -36,14 +36,14 @@ export class SubfamilyService {
       family,
     });
     const savedSubfamily = await this.subfamilyRepository.save(subfamily);
-    return successResponse(savedSubfamily, 'Subfamily created successfully');
+    return successResponse(savedSubfamily, 'Sous-famille créée avec succès');
   }
 
   async findAll(): Promise<SuccessResponse<Subfamily[]>> {
     const subfamilies = await this.subfamilyRepository.find({
       relations: ['family', 'categories'],
     });
-    return successResponse(subfamilies, 'Subfamilies fetched successfully');
+    return successResponse(subfamilies, 'Sous-familles récupérées avec succès');
   }
 
   async findOne(id: number): Promise<SuccessResponse<Subfamily>> {
@@ -52,9 +52,9 @@ export class SubfamilyService {
       relations: ['family', 'categories'],
     });
     if (!subfamily) {
-      throw new NotFoundException(`Subfamily with ID ${id} not found`);
+      throw new NotFoundException(`Sous-famille avec l'ID ${id} introuvable`);
     }
-    return successResponse(subfamily, 'Subfamily fetched successfully');
+    return successResponse(subfamily, 'Sous-famille récupérée avec succès');
   }
 
   async update(
@@ -69,20 +69,25 @@ export class SubfamilyService {
       });
       if (!family) {
         throw new NotFoundException(
-          `Family with ID ${updateSubfamilyDto.familyId} not found`,
+          `Famille avec l'ID ${updateSubfamilyDto.familyId} introuvable`,
         );
       }
       subfamily.data.family = family;
     }
 
     Object.assign(subfamily, { name: updateSubfamilyDto.name });
-    const updatedSubfamily = await this.subfamilyRepository.save(subfamily.data);
-    return successResponse(updatedSubfamily, 'Subfamily updated successfully');
+    const updatedSubfamily = await this.subfamilyRepository.save(
+      subfamily.data,
+    );
+    return successResponse(
+      updatedSubfamily,
+      'Sous-famille mise à jour avec succès',
+    );
   }
 
   async remove(id: number): Promise<SuccessResponse<null>> {
     const subfamily = await this.findOne(id);
     await this.subfamilyRepository.remove(subfamily.data);
-    return successResponse(null, 'Subfamily deleted successfully');
+    return successResponse(null, 'Sous-famille supprimée avec succès');
   }
 }

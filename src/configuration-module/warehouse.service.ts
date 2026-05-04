@@ -21,20 +21,20 @@ export class WarehouseService {
   ): Promise<SuccessResponse<Warehouse>> {
     const warehouse = this.warehouseRepository.create(createWarehouseDto);
     const savedWarehouse = await this.warehouseRepository.save(warehouse);
-    return successResponse(savedWarehouse, 'Warehouse created successfully');
+    return successResponse(savedWarehouse, 'Entrepôt créé avec succès');
   }
 
   async findAll(): Promise<SuccessResponse<Warehouse[]>> {
     const warehouses = await this.warehouseRepository.find();
-    return successResponse(warehouses, 'Warehouses fetched successfully');
+    return successResponse(warehouses, 'Entrepôts récupérés avec succès');
   }
 
   async findOne(id: number): Promise<SuccessResponse<Warehouse>> {
     const warehouse = await this.warehouseRepository.findOne({ where: { id } });
     if (!warehouse) {
-      throw new NotFoundException(`Warehouse with ID ${id} not found`);
+      throw new NotFoundException(`Entrepôt avec l'ID ${id} introuvable`);
     }
-    return successResponse(warehouse, 'Warehouse fetched successfully');
+    return successResponse(warehouse, 'Entrepôt récupéré avec succès');
   }
 
   async update(
@@ -43,13 +43,15 @@ export class WarehouseService {
   ): Promise<SuccessResponse<Warehouse>> {
     const warehouse = await this.findOne(id);
     Object.assign(warehouse, updateWarehouseDto);
-    const updatedWarehouse = await this.warehouseRepository.save(warehouse.data);
-    return successResponse(updatedWarehouse, 'Warehouse updated successfully');
+    const updatedWarehouse = await this.warehouseRepository.save(
+      warehouse.data,
+    );
+    return successResponse(updatedWarehouse, 'Entrepôt mis à jour avec succès');
   }
 
   async remove(id: number): Promise<SuccessResponse<null>> {
     const warehouse = await this.findOne(id);
     await this.warehouseRepository.remove(warehouse.data);
-    return successResponse(null, 'Warehouse deleted successfully');
+    return successResponse(null, 'Entrepôt supprimé avec succès');
   }
 }

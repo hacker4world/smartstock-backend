@@ -5,6 +5,9 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigurationModule } from './configuration-module/configuration.module';
 import { ClassificationModule } from './classification-module/classification.module';
+import { SupplierManufacturerModule } from './supplier-manufacturer-module/supplier-manufacturer.module';
+import { AccountsModule } from './accounts-module/accounts.module';
+import { ConstructionSiteModule } from './construction-site-module/construction-site.module';
 
 @Module({
   imports: [
@@ -32,6 +35,9 @@ import { ClassificationModule } from './classification-module/classification.mod
     // Feature modules
     ConfigurationModule,
     ClassificationModule,
+    SupplierManufacturerModule,
+    AccountsModule,
+    ConstructionSiteModule,
   ],
   controllers: [AppController],
   providers: [AppService],

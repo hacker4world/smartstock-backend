@@ -27,7 +27,7 @@ export class CategoryService {
     });
     if (!subfamily) {
       throw new NotFoundException(
-        `Subfamily with ID ${createCategoryDto.subfamilyId} not found`,
+        `Sous-famille avec l'ID ${createCategoryDto.subfamilyId} introuvable`,
       );
     }
 
@@ -36,14 +36,14 @@ export class CategoryService {
       subfamily,
     });
     const savedCategory = await this.categoryRepository.save(category);
-    return successResponse(savedCategory, 'Category created successfully');
+    return successResponse(savedCategory, 'Catégorie créée avec succès');
   }
 
   async findAll(): Promise<SuccessResponse<Category[]>> {
     const categories = await this.categoryRepository.find({
       relations: ['subfamily'],
     });
-    return successResponse(categories, 'Categories fetched successfully');
+    return successResponse(categories, 'Catégories récupérées avec succès');
   }
 
   async findOne(id: number): Promise<SuccessResponse<Category>> {
@@ -52,9 +52,9 @@ export class CategoryService {
       relations: ['subfamily'],
     });
     if (!category) {
-      throw new NotFoundException(`Category with ID ${id} not found`);
+      throw new NotFoundException(`Catégorie avec l'ID ${id} introuvable`);
     }
-    return successResponse(category, 'Category fetched successfully');
+    return successResponse(category, 'Catégorie récupérée avec succès');
   }
 
   async update(
@@ -69,7 +69,7 @@ export class CategoryService {
       });
       if (!subfamily) {
         throw new NotFoundException(
-          `Subfamily with ID ${updateCategoryDto.subfamilyId} not found`,
+          `Sous-famille avec l'ID ${updateCategoryDto.subfamilyId} introuvable`,
         );
       }
       category.data.subfamily = subfamily;
@@ -77,12 +77,15 @@ export class CategoryService {
 
     Object.assign(category, { name: updateCategoryDto.name });
     const updatedCategory = await this.categoryRepository.save(category.data);
-    return successResponse(updatedCategory, 'Category updated successfully');
+    return successResponse(
+      updatedCategory,
+      'Catégorie mise à jour avec succès',
+    );
   }
 
   async remove(id: number): Promise<SuccessResponse<null>> {
     const category = await this.findOne(id);
     await this.categoryRepository.remove(category.data);
-    return successResponse(null, 'Category deleted successfully');
+    return successResponse(null, 'Catégorie supprimée avec succès');
   }
 }

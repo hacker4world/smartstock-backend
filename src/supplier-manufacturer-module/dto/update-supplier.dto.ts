@@ -1,6 +1,6 @@
 import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 
-export class UpdateWarehouseDto {
+export class UpdateSupplierDto {
   @IsOptional()
   @IsString()
   @IsNotEmpty()
@@ -8,5 +8,6 @@ export class UpdateWarehouseDto {
 
   @IsOptional()
   @IsString()
-  address?: string;
+  @IsNotEmpty()
+  contact?: string;
 }

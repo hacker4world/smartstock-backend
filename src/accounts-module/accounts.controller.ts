@@ -1,0 +1,64 @@
+import {
+  Controller,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  ParseIntPipe,
+  UseInterceptors,
+  ClassSerializerInterceptor,
+} from '@nestjs/common';
+import { AccountsService } from './accounts.service';
+import { CreateAccountDto } from './dto/create-account.dto';
+import { UpdateAccountDto } from './dto/update-account.dto';
+import { ListAccountDto } from './dto/list-account.dto';
+import { SuccessResponse } from '../common/utils/success-response';
+import { Account } from './entities/account.entity';
+
+@UseInterceptors(ClassSerializerInterceptor)
+@Controller('accounts')
+export class AccountsController {
+  constructor(private readonly accountsService: AccountsService) {}
+
+  @Post()
+  create(
+    @Body() createAccountDto: CreateAccountDto,
+  ): Promise<SuccessResponse<Account>> {
+    return this.accountsService.create(createAccountDto);
+  }
+
+  @Post('list')
+  findFiltered(@Body() listAccountDto: ListAccountDto): Promise<
+    SuccessResponse<{
+      items: Account[];
+      total: number;
+      page: number;
+      pageSize: number;
+    }>
+  > {
+    return this.accountsService.findFiltered(listAccountDto);
+  }
+
+  @Patch(':id/accept')
+  accept(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<SuccessResponse<Account>> {
+    return this.accountsService.accept(id);
+  }
+
+  @Patch(':id')
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateAccountDto: UpdateAccountDto,
+  ): Promise<SuccessResponse<Account>> {
+    return this.accountsService.update(id, updateAccountDto);
+  }
+
+  @Delete(':id')
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<SuccessResponse<null>> {
+    return this.accountsService.remove(id);
+  }
+}

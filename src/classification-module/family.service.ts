@@ -21,14 +21,14 @@ export class FamilyService {
   ): Promise<SuccessResponse<Family>> {
     const family = this.familyRepository.create(createFamilyDto);
     const savedFamily = await this.familyRepository.save(family);
-    return successResponse(savedFamily, 'Family created successfully');
+    return successResponse(savedFamily, 'Famille créée avec succès');
   }
 
   async findAll(): Promise<SuccessResponse<Family[]>> {
     const families = await this.familyRepository.find({
       relations: ['subfamilies'],
     });
-    return successResponse(families, 'Families fetched successfully');
+    return successResponse(families, 'Familles récupérées avec succès');
   }
 
   async findOne(id: number): Promise<SuccessResponse<Family>> {
@@ -37,9 +37,9 @@ export class FamilyService {
       relations: ['subfamilies'],
     });
     if (!family) {
-      throw new NotFoundException(`Family with ID ${id} not found`);
+      throw new NotFoundException(`Famille avec l'ID ${id} introuvable`);
     }
-    return successResponse(family, 'Family fetched successfully');
+    return successResponse(family, 'Famille récupérée avec succès');
   }
 
   async update(
@@ -49,12 +49,12 @@ export class FamilyService {
     const family = await this.findOne(id);
     Object.assign(family, updateFamilyDto);
     const updatedFamily = await this.familyRepository.save(family.data);
-    return successResponse(updatedFamily, 'Family updated successfully');
+    return successResponse(updatedFamily, 'Famille mise à jour avec succès');
   }
 
   async remove(id: number): Promise<SuccessResponse<null>> {
     const family = await this.findOne(id);
     await this.familyRepository.remove(family.data);
-    return successResponse(null, 'Family deleted successfully');
+    return successResponse(null, 'Famille supprimée avec succès');
   }
 }
