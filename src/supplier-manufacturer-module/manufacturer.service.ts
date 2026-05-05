@@ -35,14 +35,13 @@ export class ManufacturerService {
     return successResponse(manufacturers, 'Fabricants récupérés avec succès');
   }
 
-  async findFiltered(
-    listManufacturerDto: ListManufacturerDto,
-  ): Promise<
+  async findFiltered(listManufacturerDto: ListManufacturerDto): Promise<
     SuccessResponse<{
       items: Manufacturer[];
       total: number;
       page: number;
       pageSize: number;
+      lastPage: boolean;
     }>
   > {
     const maxPageSize = this.configService.get<number>('PAGE_SIZE', 20);
@@ -79,8 +78,10 @@ export class ManufacturerService {
       take: pageSize,
     });
 
+    const lastPage = page * pageSize >= total; // <-- NEW
+
     return successResponse(
-      { items, total, page, pageSize },
+      { items, total, page, pageSize, lastPage }, // <-- CHANGED: added lastPage
       'Fabricants récupérés avec succès',
     );
   }

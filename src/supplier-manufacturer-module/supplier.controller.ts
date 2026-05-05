@@ -32,14 +32,13 @@ export class SupplierController {
   }
 
   @Post('list')
-  findFiltered(
-    @Body() listSupplierDto: ListSupplierDto,
-  ): Promise<
+  findFiltered(@Body() listSupplierDto: ListSupplierDto): Promise<
     SuccessResponse<{
       items: Supplier[];
       total: number;
       page: number;
       pageSize: number;
+      lastPage: boolean;
     }>
   > {
     return this.supplierService.findFiltered(listSupplierDto);

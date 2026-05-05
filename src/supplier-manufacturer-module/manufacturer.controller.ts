@@ -32,14 +32,13 @@ export class ManufacturerController {
   }
 
   @Post('list')
-  findFiltered(
-    @Body() listManufacturerDto: ListManufacturerDto,
-  ): Promise<
+  findFiltered(@Body() listManufacturerDto: ListManufacturerDto): Promise<
     SuccessResponse<{
       items: Manufacturer[];
       total: number;
       page: number;
       pageSize: number;
+      lastPage: boolean;
     }>
   > {
     return this.manufacturerService.findFiltered(listManufacturerDto);

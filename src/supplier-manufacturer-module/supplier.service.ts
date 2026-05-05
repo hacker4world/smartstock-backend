@@ -32,14 +32,13 @@ export class SupplierService {
     return successResponse(suppliers, 'Fournisseurs récupérés avec succès');
   }
 
-  async findFiltered(
-    listSupplierDto: ListSupplierDto,
-  ): Promise<
+  async findFiltered(listSupplierDto: ListSupplierDto): Promise<
     SuccessResponse<{
       items: Supplier[];
       total: number;
       page: number;
       pageSize: number;
+      lastPage: boolean;
     }>
   > {
     const maxPageSize = this.configService.get<number>('PAGE_SIZE', 20);
@@ -71,8 +70,10 @@ export class SupplierService {
       take: pageSize,
     });
 
+    const lastPage = page * pageSize >= total; // <-- NEW
+
     return successResponse(
-      { items, total, page, pageSize },
+      { items, total, page, pageSize, lastPage }, // <-- CHANGED: added lastPage
       'Fournisseurs récupérés avec succès',
     );
   }
