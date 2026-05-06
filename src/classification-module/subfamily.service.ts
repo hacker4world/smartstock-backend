@@ -1,9 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
+import { Repository, ILike } from 'typeorm';
 import { Subfamily } from './entities/subfamily.entity';
 import { CreateSubfamilyDto } from './dto/create-subfamily.dto';
 import { UpdateSubfamilyDto } from './dto/update-subfamily.dto';
+import { ListSubfamilyDto } from './dto/list-subfamily.dto';
 import { Family } from './entities/family.entity';
 import {
   SuccessResponse,
@@ -17,6 +19,7 @@ export class SubfamilyService {
     private readonly subfamilyRepository: Repository<Subfamily>,
     @InjectRepository(Family)
     private readonly familyRepository: Repository<Family>,
+    private readonly configService: ConfigService,
   ) {}
 
   async create(
@@ -44,6 +47,49 @@ export class SubfamilyService {
       relations: ['family', 'categories'],
     });
     return successResponse(subfamilies, 'Sous-familles récupérées avec succès');
+  }
+
+  async findFiltered(listSubfamilyDto: ListSubfamilyDto): Promise<
+    SuccessResponse<{
+      items: Subfamily[];
+      total: number;
+      page: number;
+      pageSize: number;
+      lastPage: boolean;
+    }>
+  > {
+    const maxPageSize = this.configService.get<number>('PAGE_SIZE', 20);
+    const page = listSubfamilyDto.page ?? 1;
+    let pageSize = listSubfamilyDto.pageSize ?? maxPageSize;
+
+    if (pageSize > maxPageSize) {
+      pageSize = maxPageSize;
+    }
+
+    const where: any = {};
+
+    if (listSubfamilyDto.filters) {
+      if (listSubfamilyDto.filters.name) {
+        where.name = ILike(`%${listSubfamilyDto.filters.name}%`);
+      }
+      if (listSubfamilyDto.filters.familyId) {
+        where.family = { id: listSubfamilyDto.filters.familyId };
+      }
+    }
+
+    const [items, total] = await this.subfamilyRepository.findAndCount({
+      where,
+      relations: ['family', 'categories'],
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    });
+
+    const lastPage = page * pageSize >= total;
+
+    return successResponse(
+      { items, total, page, pageSize, lastPage },
+      'Sous-familles récupérées avec succès',
+    );
   }
 
   async findOne(id: number): Promise<SuccessResponse<Subfamily>> {

@@ -42,7 +42,7 @@ export class WarehouseService {
     updateWarehouseDto: UpdateWarehouseDto,
   ): Promise<SuccessResponse<Warehouse>> {
     const warehouse = await this.findOne(id);
-    Object.assign(warehouse, updateWarehouseDto);
+    Object.assign(warehouse.data, updateWarehouseDto);
     const updatedWarehouse = await this.warehouseRepository.save(
       warehouse.data,
     );

@@ -11,6 +11,7 @@ import {
 import { CategoryService } from './category.service';
 import * as createCategoryDto_1 from './dto/create-category.dto';
 import * as updateCategoryDto_1 from './dto/update-category.dto';
+import { ListCategoryDto } from './dto/list-category.dto';
 import { SuccessResponse } from '../common/utils/success-response';
 import { Category } from './entities/category.entity';
 
@@ -28,6 +29,19 @@ export class CategoryController {
   @Get()
   findAll(): Promise<SuccessResponse<Category[]>> {
     return this.categoryService.findAll();
+  }
+
+  @Post('list')
+  findFiltered(@Body() listCategoryDto: ListCategoryDto): Promise<
+    SuccessResponse<{
+      items: Category[];
+      total: number;
+      page: number;
+      pageSize: number;
+      lastPage: boolean;
+    }>
+  > {
+    return this.categoryService.findFiltered(listCategoryDto);
   }
 
   @Get(':id')

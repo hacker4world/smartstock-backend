@@ -19,7 +19,10 @@ export class Subfamily {
   @Column({ type: 'varchar', length: 255 })
   name: string;
 
-  @ManyToOne(() => Family, (family) => family.subfamilies, { nullable: false })
+  @ManyToOne(() => Family, (family) => family.subfamilies, {
+    nullable: false,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'familyId' })
   family: Family;
 

@@ -1,9 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
+import { Repository, ILike } from 'typeorm';
 import { Category } from './entities/category.entity';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { ListCategoryDto } from './dto/list-category.dto';
 import { Subfamily } from './entities/subfamily.entity';
 import {
   SuccessResponse,
@@ -17,6 +19,7 @@ export class CategoryService {
     private readonly categoryRepository: Repository<Category>,
     @InjectRepository(Subfamily)
     private readonly subfamilyRepository: Repository<Subfamily>,
+    private readonly configService: ConfigService,
   ) {}
 
   async create(
@@ -44,6 +47,49 @@ export class CategoryService {
       relations: ['subfamily'],
     });
     return successResponse(categories, 'Catégories récupérées avec succès');
+  }
+
+  async findFiltered(listCategoryDto: ListCategoryDto): Promise<
+    SuccessResponse<{
+      items: Category[];
+      total: number;
+      page: number;
+      pageSize: number;
+      lastPage: boolean;
+    }>
+  > {
+    const maxPageSize = this.configService.get<number>('PAGE_SIZE', 20);
+    const page = listCategoryDto.page ?? 1;
+    let pageSize = listCategoryDto.pageSize ?? maxPageSize;
+
+    if (pageSize > maxPageSize) {
+      pageSize = maxPageSize;
+    }
+
+    const where: any = {};
+
+    if (listCategoryDto.filters) {
+      if (listCategoryDto.filters.name) {
+        where.name = ILike(`%${listCategoryDto.filters.name}%`);
+      }
+      if (listCategoryDto.filters.subfamilyId) {
+        where.subfamily = { id: listCategoryDto.filters.subfamilyId };
+      }
+    }
+
+    const [items, total] = await this.categoryRepository.findAndCount({
+      where,
+      relations: ['subfamily'],
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    });
+
+    const lastPage = page * pageSize >= total;
+
+    return successResponse(
+      { items, total, page, pageSize, lastPage },
+      'Catégories récupérées avec succès',
+    );
   }
 
   async findOne(id: number): Promise<SuccessResponse<Category>> {

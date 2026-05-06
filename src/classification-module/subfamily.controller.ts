@@ -11,6 +11,7 @@ import {
 import { SubfamilyService } from './subfamily.service';
 import * as createSubfamilyDto_1 from './dto/create-subfamily.dto';
 import * as updateSubfamilyDto_1 from './dto/update-subfamily.dto';
+import { ListSubfamilyDto } from './dto/list-subfamily.dto';
 import { SuccessResponse } from '../common/utils/success-response';
 import { Subfamily } from './entities/subfamily.entity';
 
@@ -28,6 +29,19 @@ export class SubfamilyController {
   @Get()
   findAll(): Promise<SuccessResponse<Subfamily[]>> {
     return this.subfamilyService.findAll();
+  }
+
+  @Post('list')
+  findFiltered(@Body() listSubfamilyDto: ListSubfamilyDto): Promise<
+    SuccessResponse<{
+      items: Subfamily[];
+      total: number;
+      page: number;
+      pageSize: number;
+      lastPage: boolean;
+    }>
+  > {
+    return this.subfamilyService.findFiltered(listSubfamilyDto);
   }
 
   @Get(':id')

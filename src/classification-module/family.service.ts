@@ -47,7 +47,7 @@ export class FamilyService {
     updateFamilyDto: UpdateFamilyDto,
   ): Promise<SuccessResponse<Family>> {
     const family = await this.findOne(id);
-    Object.assign(family, updateFamilyDto);
+    Object.assign(family.data, updateFamilyDto);
     const updatedFamily = await this.familyRepository.save(family.data);
     return successResponse(updatedFamily, 'Famille mise à jour avec succès');
   }

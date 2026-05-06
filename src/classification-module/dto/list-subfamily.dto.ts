@@ -2,33 +2,31 @@ import {
   IsOptional,
   IsInt,
   Min,
-  IsObject,
+  IsPositive,
   ValidateNested,
   IsString,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-class ManufacturerFilters {
+class SubfamilyFilters {
   @IsOptional()
   @IsString()
   name?: string;
 
   @IsOptional()
-  @IsString()
-  contact?: string;
-
-  @IsOptional()
-  @IsString()
-  address?: string;
+  @IsInt()
+  @IsPositive()
+  @Type(() => Number)
+  familyId?: number;
 }
 
-export class ListManufacturerDto {
+export class ListSubfamilyDto {
   @IsOptional()
   @IsInt()
   @Min(1)
   @Type(() => Number)
   page?: number;
-  
+
   @IsOptional()
   @IsInt()
   @Min(1)
@@ -37,6 +35,6 @@ export class ListManufacturerDto {
 
   @IsOptional()
   @ValidateNested()
-  @Type(() => ManufacturerFilters)
-  filters?: ManufacturerFilters;
+  @Type(() => SubfamilyFilters)
+  filters?: SubfamilyFilters;
 }
