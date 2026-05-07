@@ -20,6 +20,7 @@ export class Category {
   @ManyToOne(() => Subfamily, (subfamily) => subfamily.categories, {
     nullable: false,
     onDelete: 'CASCADE',
+    eager: true,
   })
   @JoinColumn({ name: 'subfamilyId' })
   subfamily: Subfamily;

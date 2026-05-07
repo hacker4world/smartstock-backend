@@ -121,7 +121,7 @@ export class SubfamilyService {
       subfamily.data.family = family;
     }
 
-    Object.assign(subfamily, { name: updateSubfamilyDto.name });
+    Object.assign(subfamily.data, { name: updateSubfamilyDto.name });
     const updatedSubfamily = await this.subfamilyRepository.save(
       subfamily.data,
     );

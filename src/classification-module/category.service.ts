@@ -121,7 +121,7 @@ export class CategoryService {
       category.data.subfamily = subfamily;
     }
 
-    Object.assign(category, { name: updateCategoryDto.name });
+    Object.assign(category.data, { name: updateCategoryDto.name });
     const updatedCategory = await this.categoryRepository.save(category.data);
     return successResponse(
       updatedCategory,

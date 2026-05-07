@@ -22,6 +22,7 @@ export class Subfamily {
   @ManyToOne(() => Family, (family) => family.subfamilies, {
     nullable: false,
     onDelete: 'CASCADE',
+    eager: true,
   })
   @JoinColumn({ name: 'familyId' })
   family: Family;
