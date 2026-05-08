@@ -15,6 +15,8 @@ import {
   SuccessResponse,
   successResponse,
 } from '../common/utils/success-response';
+import { AccountRole } from 'src/common/enums/account-role.enum';
+import { AccountStats } from './dto/account-stats.dto';
 
 @Injectable()
 export class AccountsService {
@@ -84,6 +86,10 @@ export class AccountsService {
           `%${listAccountDto.filters.lastname}%`,
         );
       }
+
+      if (listAccountDto.filters.confirmed !== undefined) {
+        filterConditions.confirmed = listAccountDto.filters.confirmed;
+      }
       where[0] = filterConditions;
     }
 
@@ -96,6 +102,41 @@ export class AccountsService {
     return successResponse(
       { items, total, page, pageSize },
       'Comptes récupérés avec succès',
+    );
+  }
+
+  async getStats(): Promise<SuccessResponse<AccountStats>> {
+    const rawStats = await this.accountRepository
+      .createQueryBuilder('account')
+      .select('account.role', 'role')
+      .addSelect('COUNT(account.id)', 'count')
+      .groupBy('account.role')
+      .getRawMany();
+
+    let admins = 0;
+    let constructionSiteManagers = 0;
+    let productKeepers = 0;
+
+    for (const stat of rawStats) {
+      const count = parseInt(stat.count, 10);
+      switch (stat.role) {
+        case AccountRole.ADMIN:
+        case AccountRole.ADMIN1:
+        case AccountRole.ADMIN2:
+          admins += count;
+          break;
+        case AccountRole.CONSTRUCTION_SITE_MANAGER:
+          constructionSiteManagers = count;
+          break;
+        case AccountRole.PRODUCT_KEEPER:
+          productKeepers = count;
+          break;
+      }
+    }
+
+    return successResponse(
+      { admins, constructionSiteManagers, productKeepers },
+      'Statistiques des comptes récupérées avec succès',
     );
   }
 

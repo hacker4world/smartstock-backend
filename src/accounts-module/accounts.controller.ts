@@ -8,6 +8,7 @@ import {
   ParseIntPipe,
   UseInterceptors,
   ClassSerializerInterceptor,
+  Get,
 } from '@nestjs/common';
 import { AccountsService } from './accounts.service';
 import { CreateAccountDto } from './dto/create-account.dto';
@@ -15,6 +16,7 @@ import { UpdateAccountDto } from './dto/update-account.dto';
 import { ListAccountDto } from './dto/list-account.dto';
 import { SuccessResponse } from '../common/utils/success-response';
 import { Account } from './entities/account.entity';
+import { AccountStats } from './dto/account-stats.dto';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('accounts')
@@ -38,6 +40,11 @@ export class AccountsController {
     }>
   > {
     return this.accountsService.findFiltered(listAccountDto);
+  }
+
+  @Get('stats')
+  getStats(): Promise<SuccessResponse<AccountStats>> {
+    return this.accountsService.getStats();
   }
 
   @Patch(':id/accept')

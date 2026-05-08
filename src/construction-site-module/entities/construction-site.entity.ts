@@ -20,8 +20,8 @@ export class ConstructionSite {
   @Column({ type: 'varchar', length: 255 })
   address: string;
 
-  @ManyToOne(() => Account, { nullable: false })
-  @JoinColumn({ name: 'manager_id' }) 
+  @ManyToOne(() => Account, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'manager_id' })
   manager: Account;
 
   @CreateDateColumn()

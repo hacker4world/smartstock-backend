@@ -6,6 +6,7 @@ import {
   ValidateNested,
   IsString,
   IsEnum,
+  IsBoolean, // ← new import
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { AccountRole } from '../../common/enums/account-role.enum';
@@ -26,6 +27,11 @@ class AccountFilters {
   @IsOptional()
   @IsString()
   lastname?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean) // ← new field
+  confirmed?: boolean;
 }
 
 export class ListAccountDto {
