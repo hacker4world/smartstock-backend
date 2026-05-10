@@ -23,9 +23,13 @@ export class ProductService {
     createProductDto: CreateProductDto,
   ): Promise<SuccessResponse<Product>> {
     const product = this.productRepository.create({
-      ...createProductDto,
+      name: createProductDto.name,
+      minimumStock: createProductDto.minimumStock,
       stock: 0,
       averagePrice: 0,
+      unit: { id: createProductDto.unitId },
+      warehouse: { id: createProductDto.warehouseId },
+      category: { id: createProductDto.categoryId },
     });
     const savedProduct = await this.productRepository.save(product);
     return successResponse(savedProduct, 'Produit créé avec succès');
@@ -71,8 +75,10 @@ export class ProductService {
       take: pageSize,
     });
 
+    const lastPage = page * pageSize >= total;
+
     return successResponse(
-      { items, total, page, pageSize },
+      { items, total, page, pageSize, lastPage },
       'Produits récupérés avec succès',
     );
   }

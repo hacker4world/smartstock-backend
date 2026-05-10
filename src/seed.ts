@@ -16,6 +16,7 @@ import { Manufacturer } from './supplier-manufacturer-module/entities/manufactur
 import { Account } from './accounts-module/entities/account.entity';
 import { ConstructionSite } from './construction-site-module/entities/construction-site.entity';
 import { AccountRole } from './common/enums/account-role.enum';
+import { Product } from './product-module/entities/product.entity';
 
 const SEED_COUNT = 40;
 const DEFAULT_PASSWORD = '12345678';
@@ -40,6 +41,8 @@ async function seed() {
   const constructionSiteRepo: Repository<ConstructionSite> =
     dataSource.getRepository(ConstructionSite);
 
+  const productRepo: Repository<Product> = dataSource.getRepository(Product);
+
   // ─── Clear existing data in reverse dependency order ───────────────────────
   console.log('🗑️  Clearing existing data...');
   await constructionSiteRepo.deleteAll();
@@ -51,6 +54,7 @@ async function seed() {
   await unitRepo.deleteAll();
   await warehouseRepo.deleteAll();
   await accountRepo.deleteAll();
+  await productRepo.deleteAll();
   console.log('✅ Existing data cleared.');
 
   // ─── 1. Seed Accounts (no dependencies) ────────────────────────────────────
@@ -224,6 +228,46 @@ async function seed() {
   await constructionSiteRepo.save(constructionSites);
   console.log(`✅ ${constructionSites.length} construction sites seeded.`);
 
+  // ─── 10. Seed Products (depends on Unit, Warehouse, Category) ────────────────
+  console.log('📦 Seeding products...');
+  const productNames = [
+    'Ciment Portland 42.5',
+    'Sable fin lavé',
+    'Gravier concassé 8/16',
+    'Fer à béton 12mm',
+    'Parpaing creux 20x20x40',
+    'Carreau de plâtre',
+    'Tuyau PVC 32mm',
+    'Câble électrique 2.5mm²',
+    'Peinture acrylique blanche',
+    'Carrelage mural 30x60',
+    'Robinet de lavabo',
+    'Radiateur acier 1000W',
+    'Porte blindée 2 vantaux',
+    'Fenêtre PVC 120x120',
+    'Tuile romane terre cuite',
+    'Isolant laine de verre',
+    'Panneau OSB 250x125',
+    'Collage carrelage 25kg',
+    'Joint silicone transparent',
+    'Échafaudage roulant 2m',
+  ];
+  const products: Product[] = [];
+  for (let i = 0; i < 20; i++) {
+    const product = productRepo.create({
+      name: productNames[i],
+      stock: Math.floor(Math.random() * 500) + 10,
+      minimumStock: Math.floor(Math.random() * 50) + 5,
+      averagePrice: parseFloat((Math.random() * 200 + 1).toFixed(2)),
+      unit: units[i % units.length],
+      warehouse: warehouses[i % warehouses.length],
+      category: categories[i % categories.length],
+    });
+    products.push(product);
+  }
+  await productRepo.save(products);
+  console.log(`✅ ${products.length} products seeded.`);
+
   // ─── Summary ──────────────────────────────────────────────────────────────
   console.log('\n═══════════════════════════════════════════');
   console.log('🎉 Seeding completed successfully!');
@@ -236,6 +280,7 @@ async function seed() {
   console.log(`   Manufacturers     : ${manufacturers.length}`);
   console.log(`   Suppliers         : ${suppliers.length}`);
   console.log(`   Construction Sites: ${constructionSites.length}`);
+  console.log(`   Products          : ${products.length}`);
   console.log('═══════════════════════════════════════════\n');
 
   await app.close();

@@ -28,15 +28,15 @@ export class Product {
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   averagePrice: number;
 
-  @ManyToOne(() => Unit, { nullable: false })
+  @ManyToOne(() => Unit, { nullable: false, eager: true })
   @JoinColumn({ name: 'unitId' })
   unit: Unit;
 
-  @ManyToOne(() => Warehouse, { nullable: false })
+  @ManyToOne(() => Warehouse, { nullable: false, eager: true })
   @JoinColumn({ name: 'warehouseId' })
   warehouse: Warehouse;
 
-  @ManyToOne(() => Category, { nullable: false })
+  @ManyToOne(() => Category, { nullable: false, eager: true })
   @JoinColumn({ name: 'categoryId' })
   category: Category;
 
