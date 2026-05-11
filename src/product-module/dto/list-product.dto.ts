@@ -5,6 +5,7 @@ import {
   IsObject,
   ValidateNested,
   IsString,
+  IsNumber,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -12,6 +13,42 @@ class ProductFilters {
   @IsOptional()
   @IsString()
   name?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Type(() => Number)
+  unitId?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Type(() => Number)
+  categoryId?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Type(() => Number)
+  warehouseId?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Type(() => Number)
+  minimumStock?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Type(() => Number)
+  averagePrice?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Type(() => Number)
+  stock?: number;
 }
 
 export class ListProductDto {

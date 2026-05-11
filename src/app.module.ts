@@ -9,6 +9,7 @@ import { SupplierManufacturerModule } from './supplier-manufacturer-module/suppl
 import { AccountsModule } from './accounts-module/accounts.module';
 import { ConstructionSiteModule } from './construction-site-module/construction-site.module';
 import { ProductModule } from './product-module/product.module';
+import { SharedJwtModule } from './common/jwt/jwt.module';
 
 @Module({
   imports: [
@@ -16,6 +17,8 @@ import { ProductModule } from './product-module/product.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+
+    SharedJwtModule,
 
     // Configure TypeORM connection to PostgreSQL
     TypeOrmModule.forRootAsync({

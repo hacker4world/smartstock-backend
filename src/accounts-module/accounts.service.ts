@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -17,6 +18,8 @@ import {
 } from '../common/utils/success-response';
 import { AccountRole } from 'src/common/enums/account-role.enum';
 import { AccountStats } from './dto/account-stats.dto';
+import { JwtService } from '@nestjs/jwt';
+import { LoginDto } from './dto/login.dto';
 
 @Injectable()
 export class AccountsService {
@@ -24,7 +27,50 @@ export class AccountsService {
     @InjectRepository(Account)
     private readonly accountRepository: Repository<Account>,
     private readonly configService: ConfigService,
+    private readonly jwtService: JwtService,
   ) {}
+
+  async login(
+    loginDto: LoginDto,
+  ): Promise<SuccessResponse<{ account: Account; token: string }>> {
+    const account = await this.accountRepository.findOne({
+      where: { username: loginDto.username },
+    });
+
+    if (!account) {
+      throw new UnauthorizedException(
+        "Nom d'utilisateur ou mot de passe incorrect",
+      );
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      loginDto.password,
+      account.password,
+    );
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException(
+        "Nom d'utilisateur ou mot de passe incorrect",
+      );
+    }
+
+    // Reject non-confirmed users
+    if (!account.confirmed) {
+      throw new UnauthorizedException(
+        "Votre compte n'a pas encore été confirmé. Veuillez contacter un administrateur.",
+      );
+    }
+
+    const payload = {
+      sub: account.id,
+      username: account.username,
+      role: account.role,
+    };
+
+    const token = this.jwtService.sign(payload);
+
+    return successResponse({ account, token }, 'Connexion réussie');
+  }
 
   async create(
     createAccountDto: CreateAccountDto,
@@ -41,8 +87,11 @@ export class AccountsService {
 
     const hashedPassword = await bcrypt.hash(createAccountDto.password, 10);
     const account = this.accountRepository.create({
-      ...createAccountDto,
+      firstname: createAccountDto.firstname,
+      lastname: createAccountDto.lastname,
+      username: createAccountDto.username,
       password: hashedPassword,
+      // role intentionally not set — new accounts start with no role
     });
     const savedAccount = await this.accountRepository.save(account);
     return successResponse(savedAccount, 'Compte créé avec succès');

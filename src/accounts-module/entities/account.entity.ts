@@ -26,9 +26,6 @@ export class Account {
   @Column({ type: 'varchar', length: 255 })
   password: string;
 
-  @Column({ type: 'enum', enum: AccountRole })
-  role: AccountRole;
-
   @Column({ type: 'boolean', default: false })
   confirmed: boolean;
 
@@ -37,4 +34,7 @@ export class Account {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @Column({ type: 'enum', enum: AccountRole, nullable: true })
+  role: AccountRole;
 }

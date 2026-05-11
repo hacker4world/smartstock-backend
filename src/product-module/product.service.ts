@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
-import { Repository, ILike } from 'typeorm';
+import { Repository, ILike, LessThanOrEqual } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -58,14 +58,36 @@ export class ProductService {
       pageSize = maxPageSize;
     }
 
-    const where: any[] = [{}];
+    const where: any = {};
 
     if (listProductDto.filters) {
-      const filterConditions: any = {};
       if (listProductDto.filters.name) {
-        filterConditions.name = ILike(`%${listProductDto.filters.name}%`);
+        where.name = ILike(`%${listProductDto.filters.name}%`);
       }
-      where[0] = filterConditions;
+
+      if (listProductDto.filters.unitId) {
+        where.unit = { id: listProductDto.filters.unitId };
+      }
+
+      if (listProductDto.filters.categoryId) {
+        where.category = { id: listProductDto.filters.categoryId };
+      }
+
+      if (listProductDto.filters.warehouseId) {
+        where.warehouse = { id: listProductDto.filters.warehouseId };
+      }
+
+      if (listProductDto.filters.minimumStock !== undefined) {
+        where.stock = LessThanOrEqual(listProductDto.filters.minimumStock);
+      }
+
+      if (listProductDto.filters.averagePrice !== undefined) {
+        where.averagePrice = listProductDto.filters.averagePrice;
+      }
+
+      if (listProductDto.filters.stock !== undefined) {
+        where.stock = listProductDto.filters.stock;
+      }
     }
 
     const [items, total] = await this.productRepository.findAndCount({
@@ -75,10 +97,8 @@ export class ProductService {
       take: pageSize,
     });
 
-    const lastPage = page * pageSize >= total;
-
     return successResponse(
-      { items, total, page, pageSize, lastPage },
+      { items, total, page, pageSize },
       'Produits récupérés avec succès',
     );
   }
@@ -99,10 +119,34 @@ export class ProductService {
     updateProductDto: UpdateProductDto,
   ): Promise<SuccessResponse<Product>> {
     const product = await this.findOne(id);
-    // Only allow updating name, minimumStock, and relationships —
-    // stock and averagePrice are never updated through this endpoint
-    Object.assign(product.data, updateProductDto);
-    const updatedProduct = await this.productRepository.save(product.data);
+
+    // Update direct properties (name, minimumStock)
+    if (updateProductDto.name !== undefined) {
+      product.data.name = updateProductDto.name;
+    }
+    if (updateProductDto.minimumStock !== undefined) {
+      product.data.minimumStock = updateProductDto.minimumStock;
+    }
+
+    // Update relations using the same pattern as create()
+    if (updateProductDto.unitId !== undefined) {
+      product.data.unit = { id: updateProductDto.unitId } as any;
+    }
+    if (updateProductDto.warehouseId !== undefined) {
+      product.data.warehouse = { id: updateProductDto.warehouseId } as any;
+    }
+    if (updateProductDto.categoryId !== undefined) {
+      product.data.category = { id: updateProductDto.categoryId } as any;
+    }
+
+    await this.productRepository.save(product.data);
+
+    // Reload with full relation objects for the frontend
+    const updatedProduct = (await this.productRepository.findOne({
+      where: { id },
+      relations: ['unit', 'warehouse', 'category'],
+    })) as Product;
+
     return successResponse(updatedProduct, 'Produit mis à jour avec succès');
   }
 
