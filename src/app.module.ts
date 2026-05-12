@@ -10,6 +10,7 @@ import { AccountsModule } from './accounts-module/accounts.module';
 import { ConstructionSiteModule } from './construction-site-module/construction-site.module';
 import { ProductModule } from './product-module/product.module';
 import { SharedJwtModule } from './common/jwt/jwt.module';
+import { ImportExportModule } from './import-export-module/import-export.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { SharedJwtModule } from './common/jwt/jwt.module';
     AccountsModule,
     ConstructionSiteModule,
     ProductModule,
+    ImportExportModule,
   ],
   controllers: [AppController],
   providers: [AppService],

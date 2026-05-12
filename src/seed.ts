@@ -17,6 +17,8 @@ import { Account } from './accounts-module/entities/account.entity';
 import { ConstructionSite } from './construction-site-module/entities/construction-site.entity';
 import { AccountRole } from './common/enums/account-role.enum';
 import { Product } from './product-module/entities/product.entity';
+import { Import } from './import-export-module/entities/import.entity';
+import { ImportItem } from './import-export-module/entities/import-item.entity';
 
 const SEED_COUNT = 40;
 const DEFAULT_PASSWORD = '12345678';
@@ -40,11 +42,15 @@ async function seed() {
   const accountRepo: Repository<Account> = dataSource.getRepository(Account);
   const constructionSiteRepo: Repository<ConstructionSite> =
     dataSource.getRepository(ConstructionSite);
-
   const productRepo: Repository<Product> = dataSource.getRepository(Product);
+  const importRepo: Repository<Import> = dataSource.getRepository(Import);
+  const importItemRepo: Repository<ImportItem> =
+    dataSource.getRepository(ImportItem);
 
   // ─── Clear existing data in reverse dependency order ───────────────────────
   console.log('🗑️  Clearing existing data...');
+  await importItemRepo.deleteAll();
+  await importRepo.deleteAll();
   await constructionSiteRepo.deleteAll();
   await categoryRepo.deleteAll();
   await subfamilyRepo.deleteAll();
@@ -186,7 +192,6 @@ async function seed() {
   console.log('📁 Seeding subfamilies...');
   const subfamilies: Subfamily[] = [];
   for (let i = 1; i <= SEED_COUNT; i++) {
-    // Distribute subfamilies evenly across families
     const parentFamily = families[(i - 1) % families.length];
     const subfamily = subfamilyRepo.create({
       name: `Subfamily ${i}`,
@@ -201,7 +206,6 @@ async function seed() {
   console.log('📄 Seeding categories...');
   const categories: Category[] = [];
   for (let i = 1; i <= SEED_COUNT; i++) {
-    // Distribute categories evenly across subfamilies
     const parentSubfamily = subfamilies[(i - 1) % subfamilies.length];
     const category = categoryRepo.create({
       name: `Category ${i}`,
@@ -216,7 +220,6 @@ async function seed() {
   console.log('🚧 Seeding construction sites...');
   const constructionSites: ConstructionSite[] = [];
   for (let i = 1; i <= SEED_COUNT; i++) {
-    // Distribute managers evenly across accounts
     const manager = accounts[(i - 1) % accounts.length];
     const site = constructionSiteRepo.create({
       name: `Construction Site ${i}`,
@@ -268,6 +271,61 @@ async function seed() {
   await productRepo.save(products);
   console.log(`✅ ${products.length} products seeded.`);
 
+  // ─── 11. Seed Imports (depends on Supplier, Manufacturer, Product) ───────────
+  console.log('📥 Seeding imports...');
+  const importObservations = [
+    'Réapprovisionnement mensuel',
+    'Commande urgente chantier',
+    'Stock saisonnier',
+    'Commande fournisseur principal',
+    'Réapprovisionnement matériaux de base',
+    'Commande projet résidentiel',
+    'Stock entrepôt nord',
+    'Commande promotionnelle',
+    'Réapprovisionnement quincaillerie',
+    'Commande projet commercial',
+  ];
+
+  const imports: Import[] = [];
+  for (let i = 1; i <= 30; i++) {
+    // Random date within the last 90 days
+    const date = new Date();
+    date.setDate(date.getDate() - Math.floor(Math.random() * 90));
+
+    const importEntity = importRepo.create({
+      date,
+      observation: importObservations[i % importObservations.length],
+      confirmed: false, // All non-confirmed
+      bonDeCommande: `bon_de_commande_${i}.pdf`,
+      bonDeLivraison: `bon_de_livraison_${i}.pdf`,
+      supplier: suppliers[(i - 1) % suppliers.length],
+      manufacturer: manufacturers[(i - 1) % manufacturers.length],
+    });
+    imports.push(importEntity);
+  }
+  await importRepo.save(imports);
+  console.log(`✅ ${imports.length} imports seeded.`);
+
+  // ─── 12. Seed Import Items (depends on Import and Product) ───────────────────
+  console.log('📋 Seeding import items...');
+  const importItems: ImportItem[] = [];
+  for (let i = 0; i < 30; i++) {
+    // Each import gets 1 to 3 items
+    const itemCount = (i % 3) + 1;
+    for (let j = 0; j < itemCount; j++) {
+      const productIndex = (i * 3 + j) % products.length;
+      const importItem = importItemRepo.create({
+        enteredStock: parseFloat((Math.random() * 200 + 10).toFixed(2)),
+        unitPrice: parseFloat((Math.random() * 150 + 5).toFixed(2)),
+        import: imports[i],
+        product: products[productIndex],
+      });
+      importItems.push(importItem);
+    }
+  }
+  await importItemRepo.save(importItems);
+  console.log(`✅ ${importItems.length} import items seeded.`);
+
   // ─── Summary ──────────────────────────────────────────────────────────────
   console.log('\n═══════════════════════════════════════════');
   console.log('🎉 Seeding completed successfully!');
@@ -281,6 +339,8 @@ async function seed() {
   console.log(`   Suppliers         : ${suppliers.length}`);
   console.log(`   Construction Sites: ${constructionSites.length}`);
   console.log(`   Products          : ${products.length}`);
+  console.log(`   Imports           : ${imports.length}`);
+  console.log(`   Import Items      : ${importItems.length}`);
   console.log('═══════════════════════════════════════════\n');
 
   await app.close();
