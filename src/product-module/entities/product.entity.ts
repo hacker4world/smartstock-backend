@@ -6,10 +6,13 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
 import { Unit } from '../../configuration-module/entities/unit.entity';
 import { Warehouse } from '../../configuration-module/entities/warehouse.entity';
 import { Category } from '../../classification-module/entities/category.entity';
+import { Supplier } from 'src/supplier-manufacturer-module/entities/supplier.entity';
 
 @Entity('products')
 export class Product {
@@ -32,7 +35,11 @@ export class Product {
   @JoinColumn({ name: 'unitId' })
   unit: Unit;
 
-  @ManyToOne(() => Warehouse, { nullable: true, eager: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => Warehouse, {
+    nullable: true,
+    eager: true,
+    onDelete: 'SET NULL',
+  })
   @JoinColumn({ name: 'warehouseId' })
   warehouse: Warehouse;
 
@@ -49,4 +56,12 @@ export class Product {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @ManyToMany(() => Supplier, (supplier) => supplier.products)
+  @JoinTable({
+    name: 'product_suppliers',
+    joinColumn: { name: 'productId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'supplierId', referencedColumnName: 'id' },
+  })
+  suppliers: Supplier[];
 }

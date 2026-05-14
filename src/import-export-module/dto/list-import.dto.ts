@@ -3,7 +3,6 @@ import {
   IsOptional,
   IsInt,
   Min,
-  IsObject,
   ValidateNested,
   IsString,
   IsBoolean,
@@ -29,6 +28,12 @@ class ImportFilters {
   manufacturerId?: number;
 
   @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Type(() => Number)
+  accountId?: number;
+
+  @IsOptional()
   @IsBoolean()
   @Type(() => Boolean)
   confirmed?: boolean;
@@ -40,6 +45,14 @@ class ImportFilters {
   @IsOptional()
   @IsDateString()
   dateTo?: string;
+
+  // --- Item-level filters ---
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Type(() => Number)
+  productId?: number;
 }
 
 export class ListImportDto {

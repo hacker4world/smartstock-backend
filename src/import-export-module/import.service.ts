@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
-import { Repository, ILike, Between, FindOptionsWhere } from 'typeorm';
+import { Repository, ILike, Between, FindOptionsWhere, In } from 'typeorm';
 import { Import } from './entities/import.entity';
 import { ImportItem } from './entities/import-item.entity';
 import { Product } from '../product-module/entities/product.entity';
@@ -67,7 +67,19 @@ export class ImportService {
     });
 
     const savedImport = await this.importRepository.save(importEntity);
-    return successResponse(savedImport, 'Import créé avec succès');
+
+    const importWithRelations = (await this.importRepository.findOne({
+      where: { id: savedImport.id },
+      relations: [
+        'importItems',
+        'importItems.product',
+        'supplier',
+        'manufacturer',
+        'account',
+      ],
+    })) as Import;
+
+    return successResponse(importWithRelations, 'Import créé avec succès');
   }
 
   async findAll(): Promise<SuccessResponse<Import[]>> {
@@ -83,6 +95,9 @@ export class ImportService {
     });
     return successResponse(imports, 'Imports récupérés avec succès');
   }
+
+  // src/import-export-module/import.service.ts
+  // (Keep all imports as-is, only modify the findFiltered method)
 
   async findFiltered(listImportDto: ListImportDto): Promise<
     SuccessResponse<{
@@ -118,6 +133,10 @@ export class ImportService {
         } as any;
       }
 
+      if (listImportDto.filters.accountId) {
+        where.account = { id: listImportDto.filters.accountId } as any;
+      }
+
       if (listImportDto.filters.confirmed !== undefined) {
         where.confirmed = listImportDto.filters.confirmed;
       }
@@ -137,6 +156,38 @@ export class ImportService {
           new Date('1970-01-01'),
           new Date(listImportDto.filters.dateTo),
         );
+      }
+
+      // --- Item-level filters: find matching import IDs separately ---
+      const importItemWhere: FindOptionsWhere<ImportItem> = {};
+
+      if (listImportDto.filters.productId) {
+        importItemWhere.product = {
+          id: listImportDto.filters.productId,
+        } as any;
+      }
+
+      // If there are item-level filters, find matching import IDs first,
+      // then filter the main query by those IDs — this way ALL import items
+      // are loaded for each matching import, not just the filtered ones.
+      if (Object.keys(importItemWhere).length > 0) {
+        const matchingItems = await this.importItemRepository.find({
+          where: importItemWhere,
+          relations: ['import'],
+        });
+
+        const matchingImportIds = [
+          ...new Set(matchingItems.map((item) => item.import.id)),
+        ];
+
+        if (matchingImportIds.length === 0) {
+          return successResponse(
+            { items: [], total: 0, page, pageSize, lastPage: true },
+            'Imports récupérés avec succès',
+          );
+        }
+
+        (where as any).id = In(matchingImportIds);
       }
     }
 
@@ -296,6 +347,19 @@ export class ImportService {
 
       product.stock = newStock;
       product.averagePrice = Math.round(newAvgPrice * 100) / 100; // Round to 2 decimals
+
+      const supplier = importEntity.data.supplier;
+      if (supplier) {
+        const alreadyAssociated = product.suppliers?.some(
+          (s) => s.id === supplier.id,
+        );
+        if (!alreadyAssociated) {
+          if (!product.suppliers) {
+            product.suppliers = [];
+          }
+          product.suppliers.push(supplier);
+        }
+      }
 
       await this.productRepository.save(product);
     }

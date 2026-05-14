@@ -1,4 +1,3 @@
-// src/import-export-module/dto/update-import.dto.ts
 import {
   IsDateString,
   IsOptional,
@@ -9,20 +8,24 @@ import {
   IsNumber,
   Min,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform, plainToInstance } from 'class-transformer';
 
 export class UpdateImportItemDto {
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   id?: number;
 
+  @Type(() => Number)
   @IsNumber()
   productId: number;
 
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
   enteredStock: number;
 
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
   unitPrice: number;
@@ -42,20 +45,27 @@ export class UpdateImportDto {
   confirmed?: boolean;
 
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   supplierId?: number;
 
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   manufacturerId?: number;
 
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   accountId?: number;
 
+  @Transform(({ value }) => {
+    if (typeof value !== 'string') return value;
+    const parsed = JSON.parse(value);
+    return plainToInstance(UpdateImportItemDto, parsed);
+  })
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => UpdateImportItemDto)
   importItems?: UpdateImportItemDto[];
 }

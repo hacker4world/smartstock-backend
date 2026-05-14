@@ -48,6 +48,7 @@ export class Import {
 
   @OneToMany(() => ImportItem, (importItem) => importItem.import, {
     cascade: true,
+    eager: true,
   })
   importItems: ImportItem[];
 

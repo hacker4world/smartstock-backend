@@ -37,7 +37,7 @@ export class ProductService {
 
   async findAll(): Promise<SuccessResponse<Product[]>> {
     const products = await this.productRepository.find({
-      relations: ['unit', 'warehouse', 'category'],
+      relations: ['unit', 'warehouse', 'category', 'suppliers'],
     });
     return successResponse(products, 'Produits récupérés avec succès');
   }
@@ -92,7 +92,7 @@ export class ProductService {
 
     const [items, total] = await this.productRepository.findAndCount({
       where,
-      relations: ['unit', 'warehouse', 'category'],
+      relations: ['unit', 'warehouse', 'category', 'suppliers'],
       skip: (page - 1) * pageSize,
       take: pageSize,
     });
@@ -106,7 +106,7 @@ export class ProductService {
   async findOne(id: number): Promise<SuccessResponse<Product>> {
     const product = await this.productRepository.findOne({
       where: { id },
-      relations: ['unit', 'warehouse', 'category'],
+      relations: ['unit', 'warehouse', 'category', 'suppliers'],
     });
     if (!product) {
       throw new NotFoundException(`Produit avec l'ID ${id} introuvable`);
@@ -144,7 +144,7 @@ export class ProductService {
     // Reload with full relation objects for the frontend
     const updatedProduct = (await this.productRepository.findOne({
       where: { id },
-      relations: ['unit', 'warehouse', 'category'],
+      relations: ['unit', 'warehouse', 'category', 'suppliers'],
     })) as Product;
 
     return successResponse(updatedProduct, 'Produit mis à jour avec succès');
