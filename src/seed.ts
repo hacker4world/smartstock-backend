@@ -19,6 +19,11 @@ import { AccountRole } from './common/enums/account-role.enum';
 import { Product } from './product-module/entities/product.entity';
 import { Import } from './import-export-module/entities/import.entity';
 import { ImportItem } from './import-export-module/entities/import-item.entity';
+import {
+  Export,
+  ExportType,
+} from './import-export-module/entities/export.entity';
+import { ExportItem } from './import-export-module/entities/export-item.entity';
 
 const SEED_COUNT = 40;
 const DEFAULT_PASSWORD = '12345678';
@@ -46,9 +51,14 @@ async function seed() {
   const importRepo: Repository<Import> = dataSource.getRepository(Import);
   const importItemRepo: Repository<ImportItem> =
     dataSource.getRepository(ImportItem);
+  const exportRepo: Repository<Export> = dataSource.getRepository(Export);
+  const exportItemRepo: Repository<ExportItem> =
+    dataSource.getRepository(ExportItem);
 
   // ─── Clear existing data in reverse dependency order ───────────────────────
   console.log('🗑️  Clearing existing data...');
+  await exportItemRepo.deleteAll();
+  await exportRepo.deleteAll();
   await importItemRepo.deleteAll();
   await importRepo.deleteAll();
   await constructionSiteRepo.deleteAll();
@@ -75,7 +85,7 @@ async function seed() {
       username: `user${i}`,
       password: hashedPassword,
       role: roles[i % roles.length],
-      confirmed: i % 3 !== 0, // some unconfirmed (~33%)
+      confirmed: i % 3 !== 0,
     });
     accounts.push(account);
   }
@@ -288,14 +298,13 @@ async function seed() {
 
   const imports: Import[] = [];
   for (let i = 1; i <= 30; i++) {
-    // Random date within the last 90 days
     const date = new Date();
     date.setDate(date.getDate() - Math.floor(Math.random() * 90));
 
     const importEntity = importRepo.create({
       date,
       observation: importObservations[i % importObservations.length],
-      confirmed: false, // All non-confirmed
+      confirmed: false,
       bonDeCommande: `bon_de_commande_${i}.pdf`,
       bonDeLivraison: `bon_de_livraison_${i}.pdf`,
       supplier: suppliers[(i - 1) % suppliers.length],
@@ -310,7 +319,6 @@ async function seed() {
   console.log('📋 Seeding import items...');
   const importItems: ImportItem[] = [];
   for (let i = 0; i < 30; i++) {
-    // Each import gets 1 to 3 items
     const itemCount = (i % 3) + 1;
     for (let j = 0; j < itemCount; j++) {
       const productIndex = (i * 3 + j) % products.length;
@@ -325,6 +333,89 @@ async function seed() {
   }
   await importItemRepo.save(importItems);
   console.log(`✅ ${importItems.length} import items seeded.`);
+
+  // ─── 13. Seed Exports (depends on Warehouse, ConstructionSite, Account, Product)
+  console.log('📤 Seeding exports...');
+  const exportObservations = [
+    'Sortie chantier principal',
+    'Transfert entrepôt secondaire',
+    'Vente client externe',
+    'Livraison projet résidentiel',
+    'Sortie matériaux gros œuvre',
+    'Commande client prioritaire',
+    'Transfert stock urgence',
+    'Sortie quincaillerie',
+    'Livraison chantier nord',
+    'Export matériaux finition',
+  ];
+
+  const exportTypes = Object.values(ExportType);
+  const exports: Export[] = [];
+
+  for (let i = 1; i <= 40; i++) {
+    const date = new Date();
+    date.setDate(date.getDate() - Math.floor(Math.random() * 90));
+
+    const exportType = exportTypes[i % exportTypes.length];
+    const confirmed = i % 5 === 0; // ~20% confirmed
+
+    const exportData: Partial<Export> = {
+      date,
+      observation: exportObservations[i % exportObservations.length],
+      confirmed,
+      exportType,
+      account: accounts[(i - 1) % accounts.length],
+    };
+
+    switch (exportType) {
+      case ExportType.TO_WAREHOUSE:
+        exportData.warehouse = warehouses[(i * 3) % warehouses.length];
+        break;
+
+      case ExportType.TO_CONSTRUCTION_SITE:
+        exportData.constructionSite =
+          constructionSites[(i * 2) % constructionSites.length];
+        break;
+
+      case ExportType.EXTERNAL:
+        exportData.entrepriseName = `Entreprise ${i}`;
+        exportData.address = `${i} Avenue du Commerce, Ville ${i}`;
+        exportData.matriculeFiscale = `MF${String(i).padStart(6, '0')}`;
+        exportData.clientName = `Client ${i}`;
+        if (i % 5 < 2) {
+          exportData.withTransporter = true;
+          exportData.transporterName = `Transporteur ${i}`;
+          exportData.transporterMatricule = `TR${String(i).padStart(4, '0')}`;
+        } else {
+          exportData.withTransporter = false;
+        }
+        break;
+    }
+
+    const exportEntity = exportRepo.create(exportData);
+    exports.push(exportEntity);
+  }
+  await exportRepo.save(exports);
+  console.log(`✅ ${exports.length} exports seeded.`);
+
+  // ─── 14. Seed Export Items (depends on Export and Product) ───────────────────
+  console.log('📋 Seeding export items...');
+  const exportItems: ExportItem[] = [];
+  for (let i = 0; i < 40; i++) {
+    const itemCount = (i % 3) + 1;
+    for (let j = 0; j < itemCount; j++) {
+      const productIndex = (i * 3 + j) % products.length;
+      const exportItem = exportItemRepo.create({
+        exitedStock: parseFloat((Math.random() * 100 + 5).toFixed(2)),
+        unitPrice: parseFloat((Math.random() * 200 + 10).toFixed(2)),
+        export: exports[i],
+        product: products[productIndex],
+      });
+      exportItems.push(exportItem);
+    }
+  }
+  await exportItemRepo.save(exportItems);
+  console.log(`✅ ${exportItems.length} export items seeded.`);
 
   // ─── Summary ──────────────────────────────────────────────────────────────
   console.log('\n═══════════════════════════════════════════');
@@ -341,6 +432,8 @@ async function seed() {
   console.log(`   Products          : ${products.length}`);
   console.log(`   Imports           : ${imports.length}`);
   console.log(`   Import Items      : ${importItems.length}`);
+  console.log(`   Exports           : ${exports.length}`);
+  console.log(`   Export Items      : ${exportItems.length}`);
   console.log('═══════════════════════════════════════════\n');
 
   await app.close();

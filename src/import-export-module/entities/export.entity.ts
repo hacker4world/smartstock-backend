@@ -12,6 +12,7 @@ import {
 import { Warehouse } from '../../configuration-module/entities/warehouse.entity';
 import { ConstructionSite } from '../../construction-site-module/entities/construction-site.entity';
 import { ExportItem } from './export-item.entity';
+import { Account } from 'src/accounts-module/entities/account.entity';
 
 export enum ExportType {
   TO_WAREHOUSE = 'to-warehouse',
@@ -101,4 +102,8 @@ export class Export {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @ManyToOne(() => Account, { nullable: true, eager: true })
+  @JoinColumn({ name: 'accountId' })
+  account: Account;
 }

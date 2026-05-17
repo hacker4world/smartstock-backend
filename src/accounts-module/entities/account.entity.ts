@@ -37,4 +37,6 @@ export class Account {
 
   @Column({ type: 'enum', enum: AccountRole, nullable: true })
   role: AccountRole;
+
+  
 }

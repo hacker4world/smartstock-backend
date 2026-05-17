@@ -7,7 +7,14 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
-import { Repository, ILike, Between, FindOptionsWhere, In } from 'typeorm';
+import {
+  Repository,
+  ILike,
+  Between,
+  FindOptionsWhere,
+  In,
+  DeepPartial,
+} from 'typeorm';
 import { Export, ExportType } from './entities/export.entity';
 import { ExportItem } from './entities/export-item.entity';
 import { Product } from '../product-module/entities/product.entity';
@@ -20,6 +27,7 @@ import {
   SuccessResponse,
   successResponse,
 } from '../common/utils/success-response';
+import { Account } from 'src/accounts-module/entities/account.entity';
 
 @Injectable()
 export class ExportService {
@@ -35,12 +43,15 @@ export class ExportService {
     @InjectRepository(ConstructionSite)
     private readonly constructionSiteRepository: Repository<ConstructionSite>,
     private readonly configService: ConfigService,
+    @InjectRepository(Account)
+    private readonly accountRepository: Repository<Account>,
   ) {}
 
   async create(
     createExportDto: CreateExportDto,
   ): Promise<SuccessResponse<Export>> {
     // Validate products exist
+
     if (createExportDto.exportItems && createExportDto.exportItems.length > 0) {
       for (const item of createExportDto.exportItems) {
         const product = await this.productRepository.findOne({
@@ -49,6 +60,16 @@ export class ExportService {
         if (!product) {
           throw new NotFoundException(
             `Produit avec l'ID ${item.productId} introuvable`,
+          );
+        }
+
+        const currentStock = Number(product.stock);
+        const exitedStock = Number(item.exitedStock);
+
+        if (currentStock < exitedStock) {
+          throw new BadRequestException(
+            `Stock insuffisant pour le produit "${product.name}". ` +
+              `Stock actuel: ${currentStock}, quantité demandée: ${exitedStock}`,
           );
         }
       }
@@ -88,52 +109,67 @@ export class ExportService {
       }
     }
 
+    const account = await this.accountRepository.findOne({
+      where: { id: createExportDto.accountId },
+    });
+    if (!account) {
+      throw new NotFoundException(
+        `Compte avec l'ID ${createExportDto.accountId} introuvable`,
+      );
+    }
+
     // Determine withTransporter and transporter fields
     let withTransporter = false;
-    let transporterName: string | null = null;
-    let transporterMatricule: string | null = null;
+    let transporterName: string | undefined = undefined;
+    let transporterMatricule: string | undefined = undefined;
 
     if (
       createExportDto.exportType === ExportType.TO_WAREHOUSE ||
       createExportDto.exportType === ExportType.TO_CONSTRUCTION_SITE
     ) {
       withTransporter = true;
-      transporterName = createExportDto.transporterName ?? null;
-      transporterMatricule = createExportDto.transporterMatricule ?? null;
+      transporterName = createExportDto.transporterName ?? undefined;
+      transporterMatricule = createExportDto.transporterMatricule ?? undefined;
     } else if (createExportDto.exportType === ExportType.EXTERNAL) {
       withTransporter = createExportDto.withTransporter ?? false;
       if (withTransporter) {
-        transporterName = createExportDto.transporterName ?? null;
-        transporterMatricule = createExportDto.transporterMatricule ?? null;
+        transporterName = createExportDto.transporterName ?? undefined;
+        transporterMatricule =
+          createExportDto.transporterMatricule ?? undefined;
       }
     }
 
-    const savedExport = await this.exportRepository.save({
-      date: new Date(createExportDto.date), // ← FIX: string → Date
+    // Build the entity data with explicit DeepPartial<Export> type
+    // to avoid excess property checking issues
+    const exportData: DeepPartial<Export> = {
+      date: createExportDto.date, // string — TypeORM converts it, matching ImportService pattern
       observation: createExportDto.observation,
       confirmed: false,
       exportType: createExportDto.exportType,
       warehouse: createExportDto.warehouseId
         ? ({ id: createExportDto.warehouseId } as any)
-        : null,
+        : undefined, // ← undefined instead of null
       constructionSite: createExportDto.constructionSiteId
         ? ({ id: createExportDto.constructionSiteId } as any)
-        : null,
-      entrepriseName: createExportDto.entrepriseName ?? null,
-      address: createExportDto.address ?? null,
-      matriculeFiscale: createExportDto.matriculeFiscale ?? null,
-      clientName: createExportDto.clientName ?? null,
+        : undefined, // ← undefined instead of null
+      entrepriseName: createExportDto.entrepriseName ?? undefined,
+      address: createExportDto.address ?? undefined,
+      matriculeFiscale: createExportDto.matriculeFiscale ?? undefined,
+      clientName: createExportDto.clientName ?? undefined,
       withTransporter,
       transporterName,
       transporterMatricule,
+      account: { id: createExportDto.accountId } as any,
       exportItems: createExportDto.exportItems?.map((item) => ({
         product: { id: item.productId } as any,
         exitedStock: item.exitedStock,
         unitPrice: item.unitPrice,
       })),
-    });
+    };
 
-    // FIX: explicit FindOptionsWhere type assertion
+    const exportEntity = this.exportRepository.create(exportData);
+    const savedExport = await this.exportRepository.save(exportEntity);
+
     const exportWithRelations = (await this.exportRepository.findOne({
       where: { id: savedExport.id } as FindOptionsWhere<Export>,
       relations: [
@@ -141,6 +177,7 @@ export class ExportService {
         'exportItems.product',
         'warehouse',
         'constructionSite',
+        'account'
       ],
     })) as Export;
 
@@ -261,6 +298,7 @@ export class ExportService {
         'exportItems.product',
         'warehouse',
         'constructionSite',
+        'account'
       ],
       skip: (page - 1) * pageSize,
       take: pageSize,
@@ -403,7 +441,6 @@ export class ExportService {
       );
     }
 
-    // Decrease product stock for each item
     for (const item of exportEntity.exportItems) {
       const product = await this.productRepository.findOne({
         where: { id: item.product.id },
@@ -415,21 +452,12 @@ export class ExportService {
         );
       }
 
-      const currentStock = Number(product.stock);
-      const exitedStock = Number(item.exitedStock);
-
-      if (currentStock < exitedStock) {
-        throw new BadRequestException(
-          `Stock insuffisant pour le produit "${product.name}". ` +
-            `Stock actuel: ${currentStock}, quantité demandée: ${exitedStock}`,
-        );
+      if (exportEntity.exportType !== ExportType.TO_WAREHOUSE) {
+        product.stock = Number(product.stock) - Number(item.exitedStock);
+        await this.productRepository.save(product);
       }
-
-      product.stock = currentStock - exitedStock;
-      await this.productRepository.save(product);
     }
 
-    // Mark export as confirmed
     exportEntity.confirmed = true;
     const confirmedExport = await this.exportRepository.save(exportEntity);
 

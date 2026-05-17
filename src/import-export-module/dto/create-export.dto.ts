@@ -108,12 +108,18 @@ export class CreateExportDto {
 
   // --- Items ---
   @Transform(({ value }) => {
-    if (typeof value !== 'string') return value;
-    const parsed = JSON.parse(value);
-    return plainToInstance(CreateExportItemDto, parsed);
+    if (typeof value === 'string') {
+      return plainToInstance(CreateExportItemDto, JSON.parse(value));
+    }
+    return plainToInstance(CreateExportItemDto, value);
   })
   @IsArray()
   @ValidateNested({ each: true })
   @IsOptional()
   exportItems?: CreateExportItemDto[];
+
+  @Type(() => Number)
+  @IsNumber()
+  @IsNotEmpty()
+  accountId: number;
 }
