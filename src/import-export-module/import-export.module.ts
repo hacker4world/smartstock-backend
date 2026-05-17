@@ -10,11 +10,15 @@ import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { ProductModule } from 'src/product-module/product.module';
 import { Product } from 'src/product-module/entities/product.entity';
+import { Export } from './entities/export.entity';
+import { ExportItem } from './entities/export-item.entity';
+import { ExportController } from './export.controller';
+import { ExportService } from './export.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Import, ImportItem, Product]), ProductModule],
-  controllers: [ImportController],
-  providers: [ImportService],
+  imports: [TypeOrmModule.forFeature([Import, ImportItem, Product, Export, ExportItem]), ProductModule],
+  controllers: [ImportController, ExportController],
+  providers: [ImportService, ExportService],
   exports: [ImportService],
 })
 export class ImportExportModule {}
