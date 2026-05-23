@@ -46,6 +46,12 @@ class ExportFilters {
   @IsDateString()
   dateTo?: string;
 
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Type(() => Number)
+  accountId?: number;
+
   // --- Item-level filter ---
   @IsOptional()
   @IsInt()
@@ -71,10 +77,4 @@ export class ListExportDto {
   @ValidateNested()
   @Type(() => ExportFilters)
   filters?: ExportFilters;
-
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  @Type(() => Number)
-  accountId?: number;
 }

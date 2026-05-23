@@ -177,7 +177,7 @@ export class ExportService {
         'exportItems.product',
         'warehouse',
         'constructionSite',
-        'account'
+        'account',
       ],
     })) as Export;
 
@@ -220,6 +220,10 @@ export class ExportService {
     const where: FindOptionsWhere<Export> = {};
 
     if (listExportDto.filters) {
+      if (listExportDto.filters.accountId) {
+        where.account = { id: listExportDto.filters.accountId } as any;
+      }
+
       if (listExportDto.filters.observation) {
         where.observation = ILike(`%${listExportDto.filters.observation}%`);
       }
@@ -298,7 +302,7 @@ export class ExportService {
         'exportItems.product',
         'warehouse',
         'constructionSite',
-        'account'
+        'account',
       ],
       skip: (page - 1) * pageSize,
       take: pageSize,

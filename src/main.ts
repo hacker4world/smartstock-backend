@@ -10,7 +10,7 @@ async function bootstrap() {
 
   // Enable CORS for frontend
   app.enableCors({
-    origin: 'http://localhost:8081',
+    origin: ['http://localhost:8081', 'http://localhost:8080'],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     credentials: true,
   });
@@ -27,7 +27,7 @@ async function bootstrap() {
 
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
     prefix: '/uploads/',
-  });
+  });""
 
   await app.listen(process.env.PORT ?? 3000);
 }
