@@ -12,6 +12,7 @@ import { ProductModule } from './product-module/product.module';
 import { SharedJwtModule } from './common/jwt/jwt.module';
 import { ImportExportModule } from './import-export-module/import-export.module';
 import { NotificationsModule } from './notifications-module/notifications.module';
+import { WebsocketModule } from './common/websocket/websocket.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { NotificationsModule } from './notifications-module/notifications.module
     ProductModule,
     ImportExportModule,
     NotificationsModule,
+    WebsocketModule
   ],
   controllers: [AppController],
   providers: [AppService],
