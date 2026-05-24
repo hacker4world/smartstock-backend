@@ -11,6 +11,7 @@ import { ConstructionSiteModule } from './construction-site-module/construction-
 import { ProductModule } from './product-module/product.module';
 import { SharedJwtModule } from './common/jwt/jwt.module';
 import { ImportExportModule } from './import-export-module/import-export.module';
+import { NotificationsModule } from './notifications-module/notifications.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { ImportExportModule } from './import-export-module/import-export.module'
     ConstructionSiteModule,
     ProductModule,
     ImportExportModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

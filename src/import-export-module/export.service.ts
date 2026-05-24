@@ -445,6 +445,7 @@ export class ExportService {
       );
     }
 
+    // Phase 1: Validation — check stock sufficiency for ALL items before deducting any
     for (const item of exportEntity.exportItems) {
       const product = await this.productRepository.findOne({
         where: { id: item.product.id },
@@ -457,8 +458,29 @@ export class ExportService {
       }
 
       if (exportEntity.exportType !== ExportType.TO_WAREHOUSE) {
-        product.stock = Number(product.stock) - Number(item.exitedStock);
-        await this.productRepository.save(product);
+        const currentStock = Number(product.stock);
+        const exitedStock = Number(item.exitedStock);
+
+        if (currentStock < exitedStock) {
+          throw new BadRequestException(
+            `Stock insuffisant pour le produit "${product.name}". ` +
+              `Stock actuel: ${currentStock}, quantité demandée: ${exitedStock}`,
+          );
+        }
+      }
+    }
+
+    // Phase 2: Deduction — all checks passed, proceed with stock deduction
+    for (const item of exportEntity.exportItems) {
+      if (exportEntity.exportType !== ExportType.TO_WAREHOUSE) {
+        const product = await this.productRepository.findOne({
+          where: { id: item.product.id },
+        });
+
+        if (product) {
+          product.stock = Number(product.stock) - Number(item.exitedStock);
+          await this.productRepository.save(product);
+        }
       }
     }
 
