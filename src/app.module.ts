@@ -13,6 +13,7 @@ import { SharedJwtModule } from './common/jwt/jwt.module';
 import { ImportExportModule } from './import-export-module/import-export.module';
 import { NotificationsModule } from './notifications-module/notifications.module';
 import { WebsocketModule } from './common/websocket/websocket.module';
+import { CalendarModule } from './calendar-module/calendar.module';
 
 @Module({
   imports: [
@@ -48,7 +49,8 @@ import { WebsocketModule } from './common/websocket/websocket.module';
     ProductModule,
     ImportExportModule,
     NotificationsModule,
-    WebsocketModule
+    WebsocketModule,
+    CalendarModule,
   ],
   controllers: [AppController],
   providers: [AppService],
