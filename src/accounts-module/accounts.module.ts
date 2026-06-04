@@ -4,9 +4,14 @@ import { Account } from './entities/account.entity';
 import { AccountsController } from './accounts.controller';
 import { AccountsService } from './accounts.service';
 import { SharedJwtModule } from '../common/jwt/jwt.module';
+import { NotificationsModule } from 'src/notifications-module/notifications.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Account]), SharedJwtModule],
+  imports: [
+    TypeOrmModule.forFeature([Account]),
+    SharedJwtModule,
+    NotificationsModule,
+  ],
   controllers: [AccountsController],
   providers: [AccountsService],
   exports: [AccountsService],

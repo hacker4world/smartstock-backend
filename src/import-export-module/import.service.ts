@@ -18,6 +18,8 @@ import {
   SuccessResponse,
   successResponse,
 } from '../common/utils/success-response';
+import { NotificationsService } from 'src/notifications-module/notifications.service';
+import { NotificationType } from 'src/notifications-module/enums/notification-type.enum';
 
 @Injectable()
 export class ImportService {
@@ -29,6 +31,7 @@ export class ImportService {
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
     private readonly configService: ConfigService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(
@@ -67,6 +70,13 @@ export class ImportService {
     });
 
     const savedImport = await this.importRepository.save(importEntity);
+
+    await this.notificationsService
+      .create({
+        message: `Nouvel import créé le ${new Date(savedImport.date).toLocaleDateString()}`,
+        type: NotificationType.NEW_IMPORT,
+      })
+      .catch(() => {}); // Fire-and-forget — don't fail the import if notification fails
 
     const importWithRelations = (await this.importRepository.findOne({
       where: { id: savedImport.id },

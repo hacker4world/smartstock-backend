@@ -30,7 +30,7 @@ export class NotificationsService {
     const savedNotification =
       await this.notificationRepository.save(notification);
 
-    this.websocketService.broadcast('notification.created', savedNotification);
+    this.websocketService.broadcast('notification', savedNotification);
     return successResponse(savedNotification, 'Notification créée avec succès');
   }
 

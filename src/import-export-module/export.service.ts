@@ -28,6 +28,8 @@ import {
   successResponse,
 } from '../common/utils/success-response';
 import { Account } from 'src/accounts-module/entities/account.entity';
+import { NotificationsService } from 'src/notifications-module/notifications.service';
+import { NotificationType } from 'src/notifications-module/enums/notification-type.enum';
 
 @Injectable()
 export class ExportService {
@@ -45,6 +47,7 @@ export class ExportService {
     private readonly configService: ConfigService,
     @InjectRepository(Account)
     private readonly accountRepository: Repository<Account>,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(
@@ -169,6 +172,13 @@ export class ExportService {
 
     const exportEntity = this.exportRepository.create(exportData);
     const savedExport = await this.exportRepository.save(exportEntity);
+
+    this.notificationsService
+      .create({
+        message: `Nouvelle exportation créée le ${new Date(savedExport.date).toLocaleDateString()}`,
+        type: NotificationType.NEW_EXPORT,
+      })
+      .catch(() => {});
 
     const exportWithRelations = (await this.exportRepository.findOne({
       where: { id: savedExport.id } as FindOptionsWhere<Export>,
@@ -447,25 +457,24 @@ export class ExportService {
 
     // Phase 1: Validation — check stock sufficiency for ALL items before deducting any
     for (const item of exportEntity.exportItems) {
-      const product = await this.productRepository.findOne({
-        where: { id: item.product.id },
-      });
-
-      if (!product) {
-        throw new NotFoundException(
-          `Produit avec l'ID ${item.product.id} introuvable lors de la confirmation`,
-        );
-      }
-
       if (exportEntity.exportType !== ExportType.TO_WAREHOUSE) {
-        const currentStock = Number(product.stock);
-        const exitedStock = Number(item.exitedStock);
+        const product = await this.productRepository.findOne({
+          where: { id: item.product.id },
+        });
 
-        if (currentStock < exitedStock) {
-          throw new BadRequestException(
-            `Stock insuffisant pour le produit "${product.name}". ` +
-              `Stock actuel: ${currentStock}, quantité demandée: ${exitedStock}`,
-          );
+        if (product) {
+          product.stock = Number(product.stock) - Number(item.exitedStock);
+          await this.productRepository.save(product);
+
+          // Check if stock falls below minimum threshold
+          if (Number(product.stock) < Number(product.minimumStock)) {
+            this.notificationsService
+              .create({
+                message: `Alerte stock : "${product.name}" a atteint ${product.stock} unités (seuil minimum : ${product.minimumStock})`,
+                type: NotificationType.STOCK_ALERT,
+              })
+              .catch(() => {});
+          }
         }
       }
     }

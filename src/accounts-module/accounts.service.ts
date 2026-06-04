@@ -20,6 +20,8 @@ import { AccountRole } from 'src/common/enums/account-role.enum';
 import { AccountStats } from './dto/account-stats.dto';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
+import { NotificationsService } from 'src/notifications-module/notifications.service';
+import { NotificationType } from 'src/notifications-module/enums/notification-type.enum';
 
 @Injectable()
 export class AccountsService {
@@ -28,6 +30,7 @@ export class AccountsService {
     private readonly accountRepository: Repository<Account>,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async login(
@@ -93,7 +96,16 @@ export class AccountsService {
       password: hashedPassword,
       // role intentionally not set — new accounts start with no role
     });
+
     const savedAccount = await this.accountRepository.save(account);
+
+    // After saving the account successfully
+    this.notificationsService
+      .create({
+        message: `Nouveau compte créé : ${savedAccount.firstname} ${savedAccount.lastname} (${savedAccount.username})`,
+        type: NotificationType.NEW_ACCOUNT,
+      })
+      .catch(() => {});
     return successResponse(savedAccount, 'Compte créé avec succès');
   }
 

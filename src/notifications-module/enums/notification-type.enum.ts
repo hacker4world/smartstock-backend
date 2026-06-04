@@ -4,4 +4,5 @@ export enum NotificationType {
   NEW_EXPORT = 'new-export',
   NEW_REQUEST = 'new-request',
   NEW_RETURN = 'new-return',
+  STOCK_ALERT = 'stock-alert',
 }
