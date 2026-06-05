@@ -66,19 +66,9 @@ export class NotificationsService {
   async findFiltered(listNotificationDto: ListNotificationDto): Promise<
     SuccessResponse<{
       items: Notification[];
-      total: number;
-      page: number;
-      pageSize: number;
-      lastPage: boolean;
+      
     }>
   > {
-    const maxPageSize = this.configService.get<number>('PAGE_SIZE', 20);
-    const page = listNotificationDto.page ?? 1;
-    let pageSize = listNotificationDto.pageSize ?? maxPageSize;
-
-    if (pageSize > maxPageSize) {
-      pageSize = maxPageSize;
-    }
 
     const where: any = {};
 
@@ -88,25 +78,15 @@ export class NotificationsService {
     }
 
     // Filter by exact date (YYYY-MM-DD) — match the full day range
-    if (listNotificationDto.date) {
-      const startDate = new Date(listNotificationDto.date);
-      startDate.setHours(0, 0, 0, 0);
-      const endDate = new Date(listNotificationDto.date);
-      endDate.setHours(23, 59, 59, 999);
-      where.date = Between(startDate, endDate);
-    }
+    
 
-    const [items, total] = await this.notificationRepository.findAndCount({
+    const notifications = await this.notificationRepository.find({
       where,
-      skip: (page - 1) * pageSize,
-      take: pageSize,
       order: { date: 'DESC' },
     });
 
-    const lastPage = page * pageSize >= total;
-
     return successResponse(
-      { items, total, page, pageSize, lastPage },
+      { items: notifications },
       'Notifications récupérées avec succès',
     );
   }
