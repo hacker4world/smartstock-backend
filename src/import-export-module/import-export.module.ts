@@ -17,9 +17,23 @@ import { ExportService } from './export.service';
 import { Warehouse } from 'src/configuration-module/entities/warehouse.entity';
 import { ConstructionSite } from 'src/construction-site-module/entities/construction-site.entity';
 import { Account } from 'src/accounts-module/entities/account.entity';
+import { NotificationsModule } from 'src/notifications-module/notifications.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Import, ImportItem, Product, Export, ExportItem, Warehouse, ConstructionSite, Account]), ProductModule],
+  imports: [
+    TypeOrmModule.forFeature([
+      Import,
+      ImportItem,
+      Product,
+      Export,
+      ExportItem,
+      Warehouse,
+      ConstructionSite,
+      Account,
+    ]),
+    ProductModule,
+    NotificationsModule,
+  ],
   controllers: [ImportController, ExportController],
   providers: [ImportService, ExportService],
   exports: [ImportService],

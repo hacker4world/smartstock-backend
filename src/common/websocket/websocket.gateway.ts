@@ -27,34 +27,10 @@ export class WebsocketGateway
 
   async handleConnection(client: Socket): Promise<void> {
     try {
-      // Extract token from handshake auth or query
-      const token =
-        client.handshake.auth?.token ||
-        (client.handshake.query?.token as string);
-
-      if (!token) {
-        this.logger.warn(
-          `Client ${client.id} connected without token — disconnecting`,
-        );
-        client.disconnect();
-        return;
-      }
-
-      // Verify JWT
-      const payload = await this.jwtService.verifyAsync(token);
-      const userId = payload.sub;
-
       // Join a personal room so we can send targeted messages
-      client.join(`user_${userId}`);
+      client.join(`user`);
 
-      // Store user info on the socket for reference
-      client.data.userId = userId;
-      client.data.role = payload.role;
-      client.data.username = payload.username;
-
-      this.logger.log(
-        `Client ${client.id} authenticated as user ${userId} (${payload.role})`,
-      );
+      this.logger.log(`Client ${client.id} authenticated as user`);
     } catch (error) {
       this.logger.warn(
         `Client ${client.id} authentication failed — disconnecting`,
