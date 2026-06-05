@@ -43,10 +43,6 @@ export class NotificationsController {
   findFiltered(@Body() listNotificationDto: ListNotificationDto): Promise<
     SuccessResponse<{
       items: Notification[];
-      total: number;
-      page: number;
-      pageSize: number;
-      lastPage: boolean;
     }>
   > {
     return this.notificationsService.findFiltered(listNotificationDto);
