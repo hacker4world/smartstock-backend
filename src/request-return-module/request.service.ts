@@ -28,6 +28,9 @@ import {
 } from '../common/utils/success-response';
 import { NotificationsService } from '../notifications-module/notifications.service';
 import { NotificationType } from '../notifications-module/enums/notification-type.enum';
+import { Export, ExportType } from 'src/import-export-module/entities/export.entity';
+import { ExportItem } from 'src/import-export-module/entities/export-item.entity';
+import { TurnProductRequestIntoExportDto } from './dto/turn-product-request-into-export.dto';
 
 @Injectable()
 export class RequestService {
@@ -44,69 +47,66 @@ export class RequestService {
     private readonly accountRepository: Repository<Account>,
     private readonly configService: ConfigService,
     private readonly notificationsService: NotificationsService,
+
+    @InjectRepository(Export)
+    private readonly exportRepository: Repository<Export>,
+    @InjectRepository(ExportItem)
+    private readonly exportItemRepository: Repository<ExportItem>,
   ) {}
 
   async create(
     createDto: CreateProductRequestDto,
   ): Promise<SuccessResponse<ProductRequest>> {
     // Validate products exist
-    if (createDto.requestItems && createDto.requestItems.length > 0) {
-      for (const item of createDto.requestItems) {
-        const product = await this.productRepository.findOne({
-          where: { id: item.productId },
-        });
-        if (!product) {
-          throw new NotFoundException(
-            `Produit avec l'ID ${item.productId} introuvable`,
-          );
-        }
-        // Ensure requested quantity is positive
-        if (Number(item.requestedStock) <= 0) {
-          throw new BadRequestException(
-            `La quantité demandée pour le produit "${product.name}" doit être supérieure à zéro`,
-          );
-        }
-      }
-    } else {
+    if (!createDto.requestItems || createDto.requestItems.length === 0) {
       throw new BadRequestException(
         'La demande doit contenir au moins un article',
       );
     }
 
-    // Validate construction site if provided
-    if (createDto.constructionSiteId) {
-      const site = await this.constructionSiteRepository.findOne({
-        where: { id: createDto.constructionSiteId },
+    for (const item of createDto.requestItems) {
+      const product = await this.productRepository.findOne({
+        where: { id: item.productId },
       });
-      if (!site) {
+      if (!product) {
         throw new NotFoundException(
-          `Chantier avec l'ID ${createDto.constructionSiteId} introuvable`,
+          `Produit avec l'ID ${item.productId} introuvable`,
+        );
+      }
+      // Extra safety: already enforced by @IsInt() and @Min(1) in DTO
+      if (item.requestedStock <= 0) {
+        throw new BadRequestException(
+          `La quantité demandée pour le produit "${product.name}" doit être supérieure à zéro`,
         );
       }
     }
 
-    // Validate account if provided
-    if (createDto.accountId) {
-      const account = await this.accountRepository.findOne({
-        where: { id: createDto.accountId },
-      });
-      if (!account) {
-        throw new NotFoundException(
-          `Compte avec l'ID ${createDto.accountId} introuvable`,
-        );
-      }
+    // Validate construction site (required)
+    const constructionSite = await this.constructionSiteRepository.findOne({
+      where: { id: createDto.constructionSiteId },
+    });
+    if (!constructionSite) {
+      throw new NotFoundException(
+        `Chantier avec l'ID ${createDto.constructionSiteId} introuvable`,
+      );
+    }
+
+    // Validate account (required)
+    const account = await this.accountRepository.findOne({
+      where: { id: createDto.accountId },
+    });
+    if (!account) {
+      throw new NotFoundException(
+        `Compte avec l'ID ${createDto.accountId} introuvable`,
+      );
     }
 
     const requestData: DeepPartial<ProductRequest> = {
       date: createDto.date,
       observation: createDto.observation,
       confirmed: false,
-      constructionSite: createDto.constructionSiteId
-        ? ({ id: createDto.constructionSiteId } as any)
-        : undefined,
-      account: createDto.accountId
-        ? ({ id: createDto.accountId } as any)
-        : undefined,
+      constructionSite: { id: createDto.constructionSiteId } as any,
+      account: { id: createDto.accountId } as any,
       requestItems: createDto.requestItems.map((item) => ({
         product: { id: item.productId } as any,
         requestedStock: item.requestedStock,
@@ -119,7 +119,7 @@ export class RequestService {
     this.notificationsService
       .create({
         message: `Nouvelle demande créée le ${new Date(savedRequest.date).toLocaleDateString()}`,
-        type: NotificationType.NEW_REQUEST, // Assurez-vous que l'enum contient cette valeur ou utilisez celle appropriée
+        type: NotificationType.NEW_REQUEST,
       })
       .catch(() => {});
 
@@ -277,32 +277,116 @@ export class RequestService {
       }
     }
 
-    // Phase 2: Deduct stock and update products
-    for (const item of requestEntity.requestItems) {
-      const product = await this.productRepository.findOne({
-        where: { id: item.product.id },
-      });
-
-      if (product) {
-        product.stock = Number(product.stock) - Number(item.requestedStock);
-        await this.productRepository.save(product);
-
-        // Low stock alert
-        if (Number(product.stock) < Number(product.minimumStock)) {
-          this.notificationsService
-            .create({
-              message: `Alerte stock : "${product.name}" a atteint ${product.stock} unités (seuil minimum : ${product.minimumStock})`,
-              type: NotificationType.STOCK_ALERT,
-            })
-            .catch(() => {});
-        }
-      }
-    }
-
     requestEntity.confirmed = true;
     const confirmedRequest = await this.requestRepository.save(requestEntity);
 
     return successResponse(confirmedRequest, 'Demande confirmée avec succès');
+  }
+
+  async turnIntoExport(
+    requestId: number,
+    dto: TurnProductRequestIntoExportDto,
+  ): Promise<SuccessResponse<Export>> {
+    // Fetch the request with its items, products, and construction site
+    const request = await this.requestRepository.findOne({
+      where: { id: requestId },
+      relations: ['requestItems', 'requestItems.product', 'constructionSite'],
+    });
+
+    if (!request) {
+      throw new NotFoundException(`Demande avec l'ID ${requestId} introuvable`);
+    }
+
+    if (!request.confirmed) {
+      throw new BadRequestException(
+        'Seules les demandes confirmées peuvent être converties en exportation',
+      );
+    }
+
+    if (!request.requestItems || request.requestItems.length === 0) {
+      throw new BadRequestException(
+        'La demande ne contient aucun article à exporter',
+      );
+    }
+
+    // Validate the new account
+    const account = await this.accountRepository.findOne({
+      where: { id: dto.accountId },
+    });
+    if (!account) {
+      throw new NotFoundException(
+        `Compte avec l'ID ${dto.accountId} introuvable`,
+      );
+    }
+
+    // Validate unit prices: each product in the request must have an entry
+    const productIdsInRequest = request.requestItems.map(
+      (item) => item.product.id,
+    );
+    const priceMap = new Map<number, number>();
+    for (const up of dto.unitPrices) {
+      if (priceMap.has(up.productId)) {
+        throw new BadRequestException(
+          `Prix unitaire en double pour le produit ID ${up.productId}`,
+        );
+      }
+      priceMap.set(up.productId, up.unitPrice);
+    }
+
+    const missingProductIds = productIdsInRequest.filter(
+      (id) => !priceMap.has(id),
+    );
+    if (missingProductIds.length > 0) {
+      throw new BadRequestException(
+        `Prix unitaire manquant pour les produits : ${missingProductIds.join(', ')}`,
+      );
+    }
+
+    // Build export entity directly (bypass ExportService to avoid double stock deduction)
+    const exportEntity = this.exportRepository.create({
+      date: request.date,
+      observation: dto.observation ?? request.observation, // override from body if provided
+      exportType: ExportType.TO_CONSTRUCTION_SITE,
+      confirmed: true, // stock already deducted during request confirmation
+      withTransporter: true,
+      transporterName: dto.transporterName,
+      transporterMatricule: dto.transporterMatricule,
+      constructionSite: request.constructionSite,
+      account: account,
+      exportItems: request.requestItems.map((item) =>
+        this.exportItemRepository.create({
+          product: item.product,
+          exitedStock: item.requestedStock,
+          unitPrice: priceMap.get(item.product.id)!,
+        }),
+      ),
+    });
+
+    const savedExport = await this.exportRepository.save(exportEntity);
+
+    // Optional notification
+    this.notificationsService
+      .create({
+        message: `Exportation générée depuis la demande #${requestId}`,
+        type: NotificationType.NEW_EXPORT,
+      })
+      .catch(() => {});
+
+    const fullExport = await this.exportRepository.findOne({
+      where: { id: savedExport.id },
+      relations: [
+        'exportItems',
+        'exportItems.product',
+        'warehouse',
+        'constructionSite',
+        'account',
+      ],
+    });
+
+    return successResponse(
+      fullExport!,
+      'Demande convertie en exportation avec succès',
+    );
   }
 
   async remove(id: number): Promise<SuccessResponse<null>> {

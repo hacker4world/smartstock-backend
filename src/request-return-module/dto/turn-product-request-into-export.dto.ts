@@ -11,37 +11,37 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class RequestItemDto {
+export class UnitPriceItemDto {
   @IsNumber()
   @IsNotEmpty()
   productId: number;
 
-  @IsInt()
-  @Min(1)
+  @IsNumber()
+  @Min(0)
   @IsNotEmpty()
-  requestedStock: number; // integer only
+  unitPrice: number;
 }
 
-export class CreateProductRequestDto {
-  @IsDateString()
+export class TurnProductRequestIntoExportDto {
+  @IsString()
   @IsNotEmpty()
-  date: string; // required
+  transporterName: string;
+
+  @IsString()
+  @IsNotEmpty()
+  transporterMatricule: string;
+
+  @IsNumber()
+  @IsNotEmpty()
+  accountId: number;
 
   @IsString()
   @IsOptional()
-  observation?: string; // still optional
-
-  @IsNumber()
-  @IsNotEmpty()
-  constructionSiteId: number; // required
-
-  @IsNumber()
-  @IsNotEmpty()
-  accountId: number; // required
+  observation?: string;
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => RequestItemDto)
+  @Type(() => UnitPriceItemDto)
   @IsNotEmpty()
-  requestItems: RequestItemDto[];
+  unitPrices: UnitPriceItemDto[];
 }

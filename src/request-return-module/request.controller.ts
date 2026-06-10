@@ -15,6 +15,8 @@ import { CreateProductRequestDto } from './dto/create-product-request.dto';
 import { ListProductRequestDto } from './dto/list-product-request.dto';
 import { SuccessResponse } from '../common/utils/success-response';
 import { ProductRequest } from './entities/request.entity';
+import { Export } from 'src/import-export-module/entities/export.entity';
+import { TurnProductRequestIntoExportDto } from './dto/turn-product-request-into-export.dto';
 
 @Controller('product-request')
 export class ProductRequestController {
@@ -27,8 +29,8 @@ export class ProductRequestController {
     return this.productRequestService.create(createDto);
   }
 
-  @Get()
-  async findFiltered(@Query() listDto: ListProductRequestDto): Promise<
+  @Post('list')
+  async list(@Body() listDto: ListProductRequestDto): Promise<
     SuccessResponse<{
       items: ProductRequest[];
       total: number;
@@ -45,6 +47,14 @@ export class ProductRequestController {
     @Param('id', ParseIntPipe) id: number,
   ): Promise<SuccessResponse<ProductRequest>> {
     return this.productRequestService.confirm(id);
+  }
+
+  @Post(':id/turn-into-export')
+  async turnIntoExport(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: TurnProductRequestIntoExportDto,
+  ): Promise<SuccessResponse<Export>> {
+    return this.productRequestService.turnIntoExport(id, dto);
   }
 
   @Delete(':id')
