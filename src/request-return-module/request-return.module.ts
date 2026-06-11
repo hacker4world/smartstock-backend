@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProductRequestController } from './request.controller';
 import { ReturnController } from './return.controller';
 import { RequestService } from './request.service';
-import { ReturnService } from './return.service';
+import { ProductReturnService } from './return.service';
 import { ProductRequest } from './entities/request.entity';
 import { RequestItem } from './entities/request-items.entity';
 import { ProductModule } from 'src/product-module/product.module';
@@ -15,17 +15,29 @@ import { ConstructionSite } from 'src/construction-site-module/entities/construc
 import { NotificationsModule } from 'src/notifications-module/notifications.module';
 import { Export } from 'src/import-export-module/entities/export.entity';
 import { ExportItem } from 'src/import-export-module/entities/export-item.entity';
+import { Return } from './entities/return.entity';
+import { ReturnItem } from './entities/return-item.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ProductRequest, RequestItem, Product, Account, ConstructionSite, Export, ExportItem]),
+    TypeOrmModule.forFeature([
+      ProductRequest,
+      RequestItem,
+      Product,
+      Account,
+      ConstructionSite,
+      Export,
+      ExportItem,
+      Return,
+      ReturnItem,
+    ]),
     ProductModule,
     ConstructionSiteModule,
     AccountsModule,
-    NotificationsModule
+    NotificationsModule,
   ],
   controllers: [ProductRequestController, ReturnController],
-  providers: [RequestService, ReturnService],
+  providers: [RequestService, ProductReturnService],
   exports: [],
 })
 export class RequestReturnModule {}
