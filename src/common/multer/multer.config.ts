@@ -1,5 +1,5 @@
 // src/common/multer/multer.config.ts
-import { extname, join } from 'path';
+import path, { extname, join } from 'path';
 import { diskStorage } from 'multer';
 import { existsSync, mkdirSync } from 'fs';
 import { BadRequestException } from '@nestjs/common';
@@ -40,3 +40,10 @@ export const multerOptions = {
     fileSize: 10 * 1024 * 1024, // 10 MB per file
   },
 };
+
+export function getUploadsDir(
+  type: 'entrees' | 'sorties' | 'demandes' | 'retours',
+  id: number,
+): string {
+  return path.join(uploadsDir, type, String(id));
+}
