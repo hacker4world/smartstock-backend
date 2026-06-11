@@ -28,7 +28,10 @@ import {
 } from '../common/utils/success-response';
 import { NotificationsService } from '../notifications-module/notifications.service';
 import { NotificationType } from '../notifications-module/enums/notification-type.enum';
-import { Export, ExportType } from 'src/import-export-module/entities/export.entity';
+import {
+  Export,
+  ExportType,
+} from 'src/import-export-module/entities/export.entity';
 import { ExportItem } from 'src/import-export-module/entities/export-item.entity';
 import { TurnProductRequestIntoExportDto } from './dto/turn-product-request-into-export.dto';
 
@@ -347,7 +350,7 @@ export class RequestService {
       date: request.date,
       observation: dto.observation ?? request.observation, // override from body if provided
       exportType: ExportType.TO_CONSTRUCTION_SITE,
-      confirmed: true, // stock already deducted during request confirmation
+      confirmed: false, // stock already deducted during request confirmation
       withTransporter: true,
       transporterName: dto.transporterName,
       transporterMatricule: dto.transporterMatricule,
