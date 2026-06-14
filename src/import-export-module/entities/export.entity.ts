@@ -1,4 +1,3 @@
-// src/import-export-module/entities/export.entity.ts
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -102,6 +101,13 @@ export class Export {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  ficheExpedition: string;
 
   @ManyToOne(() => Account, { nullable: true, eager: true })
   @JoinColumn({ name: 'accountId' })

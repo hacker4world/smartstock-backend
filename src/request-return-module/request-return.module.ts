@@ -17,6 +17,7 @@ import { Export } from 'src/import-export-module/entities/export.entity';
 import { ExportItem } from 'src/import-export-module/entities/export-item.entity';
 import { Return } from './entities/return.entity';
 import { ReturnItem } from './entities/return-item.entity';
+import { DocumentModule } from 'src/common/document-generation/documents.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { ReturnItem } from './entities/return-item.entity';
     ConstructionSiteModule,
     AccountsModule,
     NotificationsModule,
+    DocumentModule
   ],
   controllers: [ProductRequestController, ReturnController],
   providers: [RequestService, ProductReturnService],

@@ -40,6 +40,9 @@ export class ProductRequest {
   @JoinColumn({ name: 'accountId' })
   account: Account;
 
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  ficheExpedition: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

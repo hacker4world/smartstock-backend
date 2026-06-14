@@ -1,4 +1,3 @@
-// src/import-export-module/export.controller.ts
 import {
   Controller,
   Get,
@@ -72,5 +71,10 @@ export class ExportController {
     @Param('id', ParseIntPipe) id: number,
   ): Promise<SuccessResponse<null>> {
     return this.exportService.remove(id);
+  }
+
+  @Get('/document/:id')
+  generateDocument(@Param('id', ParseIntPipe) id: number) {
+    return this.exportService.generateDocument(id);
   }
 }

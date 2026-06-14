@@ -708,8 +708,8 @@ export class DocumentService {
   <!-- ===== SHIPPING INFO ===== -->
   <div class="shipping-info">
     <strong>Méthode d'expédition:</strong> Nos propres moyens<br>
-    <strong>Transporteur:</strong> 'retour.nomTransporteur' || '-'<br>
-    <strong>Matricule voiture:</strong> 'retour.matriculeTransporteur' || '-'
+    <strong>Transporteur:</strong> ${retour.transporterName} || '-'<br>
+    <strong>Matricule voiture:</strong> ${retour.transporterMatricule} || '-'
   </div>
 
   <!-- ===== TABLE (flex-grow to fill page) ===== -->

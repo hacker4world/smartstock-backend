@@ -30,6 +30,7 @@ import {
 import { Account } from 'src/accounts-module/entities/account.entity';
 import { NotificationsService } from 'src/notifications-module/notifications.service';
 import { NotificationType } from 'src/notifications-module/enums/notification-type.enum';
+import { PdfGenerationService } from 'src/common/document-generation/document-generation.service';
 
 @Injectable()
 export class ExportService {
@@ -48,6 +49,7 @@ export class ExportService {
     @InjectRepository(Account)
     private readonly accountRepository: Repository<Account>,
     private readonly notificationsService: NotificationsService,
+    private readonly documentService: PdfGenerationService,
   ) {}
 
   async create(
@@ -493,6 +495,10 @@ export class ExportService {
       }
     }
 
+    const generatedDocument = await this.documentService.generateFicheExpeditionForSortie(exportEntity);
+
+    exportEntity.ficheExpedition = generatedDocument.filename;
+
     exportEntity.confirmed = true;
     const confirmedExport = await this.exportRepository.save(exportEntity);
 
@@ -514,5 +520,11 @@ export class ExportService {
 
     await this.exportRepository.remove(exportEntity);
     return successResponse(null, 'Exportation supprimée avec succès');
+  }
+
+  async generateDocument(id: number) {
+    const exportEntity = await this.exportRepository.findOne({ where: { id } });
+
+    this.documentService.generateFicheExpeditionForSortie(exportEntity!);
   }
 }

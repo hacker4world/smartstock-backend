@@ -41,6 +41,15 @@ export class Return {
   @JoinColumn({ name: 'accountId' })
   account: Account;
 
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  transporterName: string;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  transporterMatricule: string;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  bonRetour: string;
+
   @CreateDateColumn()
   createdAt: Date;
 
