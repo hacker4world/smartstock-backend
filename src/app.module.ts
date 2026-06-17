@@ -15,6 +15,7 @@ import { NotificationsModule } from './notifications-module/notifications.module
 import { WebsocketModule } from './common/websocket/websocket.module';
 import { CalendarModule } from './calendar-module/calendar.module';
 import { RequestReturnModule } from './request-return-module/request-return.module';
+import { EventsModule } from './events-module/events.module';
 
 @Module({
   imports: [
@@ -52,7 +53,8 @@ import { RequestReturnModule } from './request-return-module/request-return.modu
     NotificationsModule,
     WebsocketModule,
     CalendarModule,
-    RequestReturnModule
+    RequestReturnModule,
+    EventsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

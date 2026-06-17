@@ -4,19 +4,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ConfigService } from '@nestjs/config';
 import { ProductRequest } from '../../request-return-module/entities/request.entity';
-import { Export, ExportType } from 'src/import-export-module/entities/export.entity';
+import {
+  Export,
+  ExportType,
+} from 'src/import-export-module/entities/export.entity';
 import { Return } from 'src/request-return-module/entities/return.entity';
-
-interface CompanyConfig {
-  name: string;
-  address: string[];
-  tel: string;
-  web: string;
-  email: string;
-  rc: string;
-  matriculeFiscal: string;
-  logoPath?: string;
-}
+import { CompanyConfig, companyConfig } from './company-config';
 
 @Injectable()
 export class DocumentService {
@@ -24,24 +17,21 @@ export class DocumentService {
   private readonly companyConfig: CompanyConfig;
 
   constructor(private readonly configService: ConfigService) {
-    // Load company configuration from config service or environment variables
     this.companyConfig = {
-      name: this.configService.get<string>('COMPANY_NAME', 'Your Company'),
-      address: this.configService
-        .get<string>('COMPANY_ADDRESS', '123 Main St, City')
-        .split(','),
-      tel: this.configService.get<string>('COMPANY_TEL', '+216 12345678'),
-      web: this.configService.get<string>('COMPANY_WEB', 'www.company.tn'),
-      email: this.configService.get<string>(
-        'COMPANY_EMAIL',
-        'contact@company.tn',
-      ),
-      rc: this.configService.get<string>('COMPANY_RC', 'RC123456'),
-      matriculeFiscal: this.configService.get<string>(
-        'COMPANY_MATRICULE_FISCAL',
-        'MF123456',
-      ),
-      logoPath: this.configService.get<string>('COMPANY_LOGO_PATH'),
+      name: companyConfig.name,
+      address: companyConfig.address,
+      tel: companyConfig.tel,
+      web: companyConfig.web,
+      email: companyConfig.email,
+      rc: companyConfig.rc,
+      matriculeFiscal: companyConfig.matriculeFiscal,
+      logoPath: companyConfig.logoPath,
+      bank: companyConfig.bank,
+      currencyLabel: companyConfig.currencyLabel,
+      paymentTerms: companyConfig.paymentTerms,
+      shippingMethod: companyConfig.shippingMethod,
+      tvaRate: companyConfig.tvaRate,
+      validityDays: companyConfig.validityDays,
     };
   }
 
@@ -298,8 +288,12 @@ export class DocumentService {
     const dateFr = this.toFrenchDate(demande.date.toString());
 
     /* ---- destinataire (chantier) ---- */
-    const destNom = demande.constructionSite ? demande.constructionSite.name : '-';
-    const destAdresse = demande.constructionSite ? demande.constructionSite.address || '' : '';
+    const destNom = demande.constructionSite
+      ? demande.constructionSite.name
+      : '-';
+    const destAdresse = demande.constructionSite
+      ? demande.constructionSite.address || ''
+      : '';
 
     /* ---- table rows ---- */
     let totalQty = 0;
@@ -397,10 +391,16 @@ export class DocumentService {
     let destNom = '-';
     let destAdresse = '';
 
-    if (sortie.exportType === ExportType.TO_CONSTRUCTION_SITE && sortie.constructionSite) {
+    if (
+      sortie.exportType === ExportType.TO_CONSTRUCTION_SITE &&
+      sortie.constructionSite
+    ) {
       destNom = sortie.constructionSite.name;
       destAdresse = sortie.constructionSite.address || '';
-    } else if (sortie.exportType === ExportType.TO_WAREHOUSE && sortie.warehouse) {
+    } else if (
+      sortie.exportType === ExportType.TO_WAREHOUSE &&
+      sortie.warehouse
+    ) {
       destNom = sortie.warehouse.name;
       destAdresse = sortie.warehouse.address || '';
     }
@@ -555,7 +555,7 @@ export class DocumentService {
         <strong>Transporteur:</strong> ${sortie.transporterName || '-'}<br>
         <strong>Matricule voiture:</strong> ${sortie.transporterMatricule || '-'}`;
     } else {
-        shippingLines = `
+      shippingLines = `
         <strong>Méthode d'expédition:</strong> Client<br>
         <strong>Nom du client:</strong> ${sortie.clientName || destNom}`;
     }
@@ -646,8 +646,12 @@ export class DocumentService {
     const dateFr = this.toFrenchDate(retour.date.toString());
 
     /* ---- client info ---- */
-    const clientNom = retour.constructionSite ? retour.constructionSite.name : '-';
-    const clientAdresse = retour.constructionSite ? retour.constructionSite.address || '' : '';
+    const clientNom = retour.constructionSite
+      ? retour.constructionSite.name
+      : '-';
+    const clientAdresse = retour.constructionSite
+      ? retour.constructionSite.address || ''
+      : '';
     const clientResp = (retour.constructionSite as any)?.compte
       ? `Responsable: ${(retour.constructionSite as any).compte.prenom} ${(retour.constructionSite as any).compte.nom}`
       : '';

@@ -495,7 +495,19 @@ export class ExportService {
       }
     }
 
-    const generatedDocument = await this.documentService.generateFicheExpeditionForSortie(exportEntity);
+    let generatedDocument: any = null;
+
+    if (exportEntity.exportType == ExportType.EXTERNAL) {
+      generatedDocument =
+        await this.documentService.generateBonDeLivraisonForSortie(
+          exportEntity,
+        );
+    } else {
+      generatedDocument =
+        await this.documentService.generateFicheExpeditionForSortie(
+          exportEntity,
+        );
+    }
 
     exportEntity.ficheExpedition = generatedDocument.filename;
 

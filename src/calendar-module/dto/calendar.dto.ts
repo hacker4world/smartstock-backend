@@ -1,4 +1,4 @@
-import { IsInt, Min, Max } from 'class-validator';
+import { IsInt, Min, Max, IsOptional } from 'class-validator';
 
 export class CalendarDto {
   @IsInt()
@@ -10,4 +10,8 @@ export class CalendarDto {
   @Min(1900)
   @Max(2100)
   year: number;
+
+  @IsOptional()
+  @IsInt()
+  productId?: number;
 }
