@@ -11,6 +11,9 @@ import {
   SuccessResponse,
   successResponse,
 } from '../common/utils/success-response';
+import { Export } from 'src/import-export-module/entities/export.entity';
+import { Return } from 'src/request-return-module/entities/return.entity';
+import { ProductRequest } from 'src/request-return-module/entities/request.entity';
 
 @Injectable()
 export class ConstructionSiteService {

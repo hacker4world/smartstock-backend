@@ -14,4 +14,8 @@ export class CalendarDto {
   @IsOptional()
   @IsInt()
   productId?: number;
+
+  @IsOptional()
+  @IsInt()
+  constructionSiteId?: number;
 }
