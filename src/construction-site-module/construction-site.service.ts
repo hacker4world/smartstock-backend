@@ -22,6 +22,12 @@ export class ConstructionSiteService {
     private readonly constructionSiteRepository: Repository<ConstructionSite>,
     @InjectRepository(Account)
     private readonly accountRepository: Repository<Account>,
+    @InjectRepository(Export)
+    private readonly exportRepository: Repository<Export>,
+    @InjectRepository(Return)
+    private readonly returnRepository: Repository<Return>,
+    @InjectRepository(ProductRequest)
+    private readonly productRequestRepository: Repository<ProductRequest>,
     private readonly configService: ConfigService,
   ) {}
 
@@ -136,5 +142,88 @@ export class ConstructionSiteService {
     const site = await this.findOne(id);
     await this.constructionSiteRepository.remove(site.data);
     return successResponse(null, 'Chantier supprimé avec succès');
+  }
+
+  // ========== NEW METHODS ==========
+
+  async getExportsBySiteId(
+    id: number,
+    page: number = 1,
+    pageSize?: number,
+  ): Promise<
+    SuccessResponse<{
+      items: Export[];
+      total: number;
+      page: number;
+      pageSize: number;
+    }>
+  > {
+    await this.findOne(id); // ensure site exists
+
+    const limit = pageSize || this.configService.get<number>('PAGE_SIZE', 10);
+    const [items, total] = await this.exportRepository.findAndCount({
+      where: { constructionSite: { id } },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    return successResponse(
+      { items, total, page, pageSize: limit },
+      'Exports récupérés avec succès',
+    );
+  }
+
+  async getReturnsBySiteId(
+    id: number,
+    page: number = 1,
+    pageSize?: number,
+  ): Promise<
+    SuccessResponse<{
+      items: Return[];
+      total: number;
+      page: number;
+      pageSize: number;
+    }>
+  > {
+    await this.findOne(id);
+
+    const limit = pageSize || this.configService.get<number>('PAGE_SIZE', 10);
+    const [items, total] = await this.returnRepository.findAndCount({
+      where: { constructionSite: { id } },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    return successResponse(
+      { items, total, page, pageSize: limit },
+      'Retours récupérés avec succès',
+    );
+  }
+
+  async getRequestsBySiteId(
+    id: number,
+    page: number = 1,
+    pageSize?: number,
+  ): Promise<
+    SuccessResponse<{
+      items: ProductRequest[];
+      total: number;
+      page: number;
+      pageSize: number;
+    }>
+  > {
+    await this.findOne(id);
+
+    const limit = pageSize || this.configService.get<number>('PAGE_SIZE', 10);
+    const [items, total] = await this.productRequestRepository.findAndCount({
+      where: { constructionSite: { id } },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    return successResponse(
+      { items, total, page, pageSize: limit },
+      'Demandes récupérées avec succès',
+    );
   }
 }

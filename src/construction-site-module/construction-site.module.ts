@@ -9,7 +9,7 @@ import { Return } from 'src/request-return-module/entities/return.entity';
 import { ProductRequest } from 'src/request-return-module/entities/request.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ConstructionSite, Account])],
+  imports: [TypeOrmModule.forFeature([ConstructionSite, Account, ProductRequest, Export, Return])],
   controllers: [ConstructionSiteController],
   providers: [ConstructionSiteService],
   exports: [ConstructionSiteService],
