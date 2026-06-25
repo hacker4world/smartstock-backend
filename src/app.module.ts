@@ -16,6 +16,7 @@ import { WebsocketModule } from './common/websocket/websocket.module';
 import { CalendarModule } from './calendar-module/calendar.module';
 import { RequestReturnModule } from './request-return-module/request-return.module';
 import { EventsModule } from './events-module/events.module';
+import { RolesModule } from './roles-module/roles.module';
 
 @Module({
   imports: [
@@ -42,7 +43,6 @@ import { EventsModule } from './events-module/events.module';
       }),
     }),
 
-    // Feature modules
     ConfigurationModule,
     ClassificationModule,
     SupplierManufacturerModule,
@@ -55,6 +55,7 @@ import { EventsModule } from './events-module/events.module';
     CalendarModule,
     RequestReturnModule,
     EventsModule,
+    RolesModule
   ],
   controllers: [AppController],
   providers: [AppService],
