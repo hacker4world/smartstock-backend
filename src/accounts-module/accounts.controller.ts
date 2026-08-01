@@ -26,6 +26,19 @@ import type { Response } from 'express';
 export class AccountsController {
   constructor(private readonly accountsService: AccountsService) {}
 
+  @Get(':id/activity')
+  async getActivity(@Param('id', ParseIntPipe) id: number): Promise<
+    SuccessResponse<{
+      imports: any[];
+      exports: any[];
+      requests: any[];
+      returns: any[];
+      constructionSites: any[];
+    }>
+  > {
+    return this.accountsService.getAccountActivity(id);
+  }
+
   @Post('login')
   async login(
     @Body() loginDto: LoginDto,
@@ -87,5 +100,12 @@ export class AccountsController {
     @Param('id', ParseIntPipe) id: number,
   ): Promise<SuccessResponse<null>> {
     return this.accountsService.remove(id);
+  }
+
+  @Get(':id')
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<SuccessResponse<Account>> {
+    return this.accountsService.findOne(id);
   }
 }

@@ -22,16 +22,78 @@ import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
 import { NotificationsService } from 'src/notifications-module/notifications.service';
 import { NotificationType } from 'src/notifications-module/enums/notification-type.enum';
+import { ConstructionSite } from 'src/construction-site-module/entities/construction-site.entity';
+import { Export } from 'src/import-export-module/entities/export.entity';
+import { Import } from 'src/import-export-module/entities/import.entity';
+import { ProductRequest } from 'src/request-return-module/entities/request.entity';
+import { Return } from 'src/request-return-module/entities/return.entity';
 
 @Injectable()
 export class AccountsService {
   constructor(
     @InjectRepository(Account)
     private readonly accountRepository: Repository<Account>,
+    @InjectRepository(Import)
+    private readonly importRepository: Repository<Import>,
+    @InjectRepository(Export)
+    private readonly exportRepository: Repository<Export>,
+    @InjectRepository(ProductRequest)
+    private readonly requestRepository: Repository<ProductRequest>,
+    @InjectRepository(Return)
+    private readonly returnRepository: Repository<Return>,
+    @InjectRepository(ConstructionSite)
+    private readonly constructionSiteRepository: Repository<ConstructionSite>,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly notificationsService: NotificationsService,
   ) {}
+
+  async getAccountActivity(id: number): Promise<
+    SuccessResponse<{
+      imports: Import[];
+      exports: Export[];
+      requests: ProductRequest[];
+      returns: Return[];
+      constructionSites: ConstructionSite[];
+    }>
+  > {
+    // Verify account exists
+    await this.getAccountById(id);
+
+    const [imports, exports, requests, returns, constructionSites] =
+      await Promise.all([
+        this.importRepository.find({
+          where: { account: { id } },
+          order: { createdAt: 'DESC' },
+          take: 10,
+        }),
+        this.exportRepository.find({
+          where: { account: { id } },
+          order: { createdAt: 'DESC' },
+          take: 10,
+        }),
+        this.requestRepository.find({
+          where: { account: { id } },
+          order: { createdAt: 'DESC' },
+          take: 10,
+        }),
+        this.returnRepository.find({
+          where: { account: { id } },
+          order: { createdAt: 'DESC' },
+          take: 10,
+        }),
+        this.constructionSiteRepository.find({
+          where: { manager: { id } },
+          order: { createdAt: 'DESC' },
+          take: 10,
+        }),
+      ]);
+
+    return successResponse(
+      { imports, exports, requests, returns, constructionSites },
+      'Activité du compte récupérée avec succès',
+    );
+  }
 
   async login(
     loginDto: LoginDto,
@@ -246,5 +308,9 @@ export class AccountsService {
       throw new NotFoundException(`Compte avec l'ID ${id} introuvable`);
     }
     return successResponse(account, 'Compte récupéré avec succès');
+  }
+
+  async findOne(id: number): Promise<SuccessResponse<Account>> {
+    return this.getAccountById(id);
   }
 }
