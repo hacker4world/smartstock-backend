@@ -47,6 +47,13 @@ export class ReturnController {
     return this.productReturnService.confirm(id, confirmDto);
   }
 
+  @Get(':id')
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<SuccessResponse<Return>> {
+    return this.productReturnService.findOne(id);
+  }
+
   @Delete(':id')
   async remove(
     @Param('id', ParseIntPipe) id: number,

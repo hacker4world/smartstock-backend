@@ -65,4 +65,14 @@ export class SupplierController {
   ): Promise<SuccessResponse<null>> {
     return this.supplierService.remove(id);
   }
+
+  @Get(':id/stats')
+  getStats(@Param('id', ParseIntPipe) id: number): Promise<
+    SuccessResponse<{
+      productCount: number;
+      importCount: number;
+    }>
+  > {
+    return this.supplierService.getStats(id);
+  }
 }

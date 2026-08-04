@@ -48,6 +48,7 @@ export class ProductService {
       total: number;
       page: number;
       pageSize: number;
+      lastPage: boolean;
     }>
   > {
     const maxPageSize = this.configService.get<number>('PAGE_SIZE', 20);
@@ -56,6 +57,35 @@ export class ProductService {
 
     if (pageSize > maxPageSize) {
       pageSize = maxPageSize;
+    }
+
+    // If filtering by supplierId, we need to use a query builder
+    // because ManyToMany relations can't be filtered with simple FindOptionsWhere
+    if (listProductDto.filters?.supplierId) {
+      const supplierId = listProductDto.filters.supplierId;
+
+      const [items, total] = await this.productRepository
+        .createQueryBuilder('product')
+        .leftJoinAndSelect('product.unit', 'unit')
+        .leftJoinAndSelect('product.warehouse', 'warehouse')
+        .leftJoinAndSelect('product.category', 'category')
+        .leftJoinAndSelect('product.suppliers', 'suppliers')
+        .innerJoin(
+          'product.suppliers',
+          'filtered_supplier',
+          'filtered_supplier.id = :supplierId',
+          { supplierId },
+        )
+        .skip((page - 1) * pageSize)
+        .take(pageSize)
+        .getManyAndCount();
+
+      const lastPage = page * pageSize >= total;
+
+      return successResponse(
+        { items, total, page, pageSize, lastPage },
+        'Produits récupérés avec succès',
+      );
     }
 
     const where: any = {};
@@ -97,8 +127,10 @@ export class ProductService {
       take: pageSize,
     });
 
+    const lastPage = page * pageSize >= total;
+
     return successResponse(
-      { items, total, page, pageSize },
+      { items, total, page, pageSize, lastPage },
       'Produits récupérés avec succès',
     );
   }

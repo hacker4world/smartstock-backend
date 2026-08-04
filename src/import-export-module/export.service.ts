@@ -524,12 +524,6 @@ export class ExportService {
     const result = await this.findOne(id);
     const exportEntity = result.data;
 
-    if (exportEntity.confirmed) {
-      throw new ConflictException(
-        'Impossible de supprimer une exportation déjà confirmée',
-      );
-    }
-
     await this.exportRepository.remove(exportEntity);
     return successResponse(null, 'Exportation supprimée avec succès');
   }

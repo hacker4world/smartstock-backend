@@ -294,6 +294,24 @@ export class RequestService {
     return successResponse(confirmedRequest, 'Demande confirmée avec succès');
   }
 
+  async findOne(id: number): Promise<SuccessResponse<ProductRequest>> {
+    const requestEntity = await this.requestRepository.findOne({
+      where: { id } as FindOptionsWhere<ProductRequest>,
+      relations: [
+        'requestItems',
+        'requestItems.product',
+        'constructionSite',
+        'account',
+      ],
+    });
+
+    if (!requestEntity) {
+      throw new NotFoundException(`Demande avec l'ID ${id} introuvable`);
+    }
+
+    return successResponse(requestEntity, 'Demande récupérée avec succès');
+  }
+
   async turnIntoExport(
     requestId: number,
     dto: TurnProductRequestIntoExportDto,

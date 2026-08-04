@@ -234,17 +234,29 @@ export class ProductReturnService {
       throw new NotFoundException(`Retour avec l'ID ${id} introuvable`);
     }
 
-    if (returnEntity.confirmed) {
-      throw new ConflictException(
-        'Impossible de supprimer un retour déjà confirmé',
-      );
-    }
-
     await this.returnRepository.remove(returnEntity);
     return successResponse(null, 'Retour supprimé avec succès');
   }
 
   // Inside ProductReturnService class
+
+  async findOne(id: number): Promise<SuccessResponse<Return>> {
+    const returnEntity = await this.returnRepository.findOne({
+      where: { id } as FindOptionsWhere<Return>,
+      relations: [
+        'returnItems',
+        'returnItems.product',
+        'constructionSite',
+        'account',
+      ],
+    });
+
+    if (!returnEntity) {
+      throw new NotFoundException(`Retour avec l'ID ${id} introuvable`);
+    }
+
+    return successResponse(returnEntity, 'Retour récupéré avec succès');
+  }
 
   async confirm(
     id: number,

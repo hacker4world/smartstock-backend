@@ -42,6 +42,13 @@ export class ProductRequestController {
     return this.productRequestService.findFiltered(listDto);
   }
 
+  @Get(':id')
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<SuccessResponse<ProductRequest>> {
+    return this.productRequestService.findOne(id);
+  }
+
   @Patch(':id/confirm')
   async confirm(
     @Param('id', ParseIntPipe) id: number,

@@ -384,12 +384,6 @@ export class ImportService {
   async remove(id: number): Promise<SuccessResponse<null>> {
     const importEntity = await this.findOne(id);
 
-    if (importEntity.data.confirmed) {
-      throw new ConflictException(
-        'Impossible de supprimer un import déjà confirmé',
-      );
-    }
-
     await this.importRepository.remove(importEntity.data);
     return successResponse(null, 'Import supprimé avec succès');
   }
