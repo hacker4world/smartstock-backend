@@ -65,4 +65,13 @@ export class ManufacturerController {
   ): Promise<SuccessResponse<null>> {
     return this.manufacturerService.remove(id);
   }
+
+  @Get(':id/stats')
+  getStats(@Param('id', ParseIntPipe) id: number): Promise<
+    SuccessResponse<{
+      importCount: number;
+    }>
+  > {
+    return this.manufacturerService.getStats(id);
+  }
 }
