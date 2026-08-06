@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -14,8 +15,13 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { ListProductDto } from './dto/list-product.dto';
 import { SuccessResponse } from '../common/utils/success-response';
 import { Product } from './entities/product.entity';
+import { PermissionsGuard } from 'src/common/guards/permissions.guard';
+import { PermissionName } from 'src/roles-module/permission.enum';
+import { RequirePermission } from 'src/common/decorators/require-permission.decorator';
 
 @Controller('products')
+@UseGuards(PermissionsGuard)
+@RequirePermission(PermissionName.VIEW_PRODUCT)
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 

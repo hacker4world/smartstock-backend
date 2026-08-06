@@ -1,11 +1,10 @@
 import {
   IsString,
   IsNotEmpty,
-  IsEnum,
-  MinLength,
+  IsInt,
   IsOptional,
+  MinLength,
 } from 'class-validator';
-import { AccountRole } from '../../common/enums/account-role.enum';
 
 export class CreateAccountDto {
   @IsString()
@@ -24,8 +23,4 @@ export class CreateAccountDto {
   @IsNotEmpty()
   @MinLength(8)
   password: string;
-
-  @IsOptional()
-  @IsEnum(AccountRole)
-  role?: AccountRole;
 }

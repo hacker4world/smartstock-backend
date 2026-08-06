@@ -4,9 +4,11 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
-import { AccountRole } from '../../common/enums/account-role.enum';
+import { Role } from '../../roles-module/entities/Role.entity';
 
 @Entity('accounts')
 export class Account {
@@ -35,8 +37,7 @@ export class Account {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @Column({ type: 'enum', enum: AccountRole, nullable: true })
-  role: AccountRole;
-
-  
+  @ManyToOne(() => Role, { nullable: true, eager: true })
+  @JoinColumn({ name: 'roleId' })
+  role: Role;
 }

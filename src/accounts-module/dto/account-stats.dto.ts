@@ -1,5 +1,4 @@
 export interface AccountStats {
-  admins: number;
-  constructionSiteManagers: number;
-  productKeepers: number;
+  roles: Record<string, number>; // role name → count
+  unassigned: number; // accounts with no role
 }

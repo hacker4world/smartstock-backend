@@ -16,7 +16,6 @@ import {
   SuccessResponse,
   successResponse,
 } from '../common/utils/success-response';
-import { AccountRole } from 'src/common/enums/account-role.enum';
 import { AccountStats } from './dto/account-stats.dto';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
@@ -27,12 +26,15 @@ import { Export } from 'src/import-export-module/entities/export.entity';
 import { Import } from 'src/import-export-module/entities/import.entity';
 import { ProductRequest } from 'src/request-return-module/entities/request.entity';
 import { Return } from 'src/request-return-module/entities/return.entity';
+import { Role } from '../roles-module/entities/Role.entity';
 
 @Injectable()
 export class AccountsService {
   constructor(
     @InjectRepository(Account)
     private readonly accountRepository: Repository<Account>,
+    @InjectRepository(Role)
+    private readonly roleRepository: Repository<Role>,
     @InjectRepository(Import)
     private readonly importRepository: Repository<Import>,
     @InjectRepository(Export)
@@ -57,7 +59,6 @@ export class AccountsService {
       constructionSites: ConstructionSite[];
     }>
   > {
-    // Verify account exists
     await this.getAccountById(id);
 
     const [imports, exports, requests, returns, constructionSites] =
@@ -100,6 +101,8 @@ export class AccountsService {
   ): Promise<SuccessResponse<{ account: Account; token: string }>> {
     const account = await this.accountRepository.findOne({
       where: { username: loginDto.username },
+      // eager: true on the relation already loads role, but explicit is safer:
+      relations: ['role'],
     });
 
     if (!account) {
@@ -119,7 +122,6 @@ export class AccountsService {
       );
     }
 
-    // Reject non-confirmed users
     if (!account.confirmed) {
       throw new UnauthorizedException(
         "Votre compte n'a pas encore été confirmé. Veuillez contacter un administrateur.",
@@ -129,7 +131,8 @@ export class AccountsService {
     const payload = {
       sub: account.id,
       username: account.username,
-      role: account.role,
+      role: account.role?.name ?? null,
+      roleId: account.role?.id ?? null,
     };
 
     const token = this.jwtService.sign(payload);
@@ -140,7 +143,6 @@ export class AccountsService {
   async create(
     createAccountDto: CreateAccountDto,
   ): Promise<SuccessResponse<Account>> {
-    // Check if username already exists
     const existing = await this.accountRepository.findOne({
       where: { username: createAccountDto.username },
     });
@@ -151,24 +153,28 @@ export class AccountsService {
     }
 
     const hashedPassword = await bcrypt.hash(createAccountDto.password, 10);
-    const account = this.accountRepository.create({
+
+    const savedAccount = await this.accountRepository.save({
       firstname: createAccountDto.firstname,
       lastname: createAccountDto.lastname,
       username: createAccountDto.username,
       password: hashedPassword,
-      // role intentionally not set — new accounts start with no role
     });
 
-    const savedAccount = await this.accountRepository.save(account);
+    // Re-fetch with relations to return full data
+    const fullAccount = await this.accountRepository.findOne({
+      where: { id: savedAccount.id },
+      relations: ['role'],
+    });
 
-    // After saving the account successfully
     this.notificationsService
       .create({
         message: `Nouveau compte créé : ${savedAccount.firstname} ${savedAccount.lastname} (${savedAccount.username})`,
         type: NotificationType.NEW_ACCOUNT,
       })
       .catch(() => {});
-    return successResponse(savedAccount, 'Compte créé avec succès');
+
+    return successResponse(fullAccount!, 'Compte créé avec succès');
   }
 
   async findFiltered(listAccountDto: ListAccountDto): Promise<
@@ -187,37 +193,29 @@ export class AccountsService {
       pageSize = maxPageSize;
     }
 
-    const where: any[] = [{}];
+    const where: any = {};
 
     if (listAccountDto.filters) {
-      const filterConditions: any = {};
-      if (listAccountDto.filters.role) {
-        filterConditions.role = listAccountDto.filters.role;
+      if (listAccountDto.filters.roleId) {
+        where.role = { id: listAccountDto.filters.roleId };
       }
       if (listAccountDto.filters.username) {
-        filterConditions.username = ILike(
-          `%${listAccountDto.filters.username}%`,
-        );
+        where.username = ILike(`%${listAccountDto.filters.username}%`);
       }
       if (listAccountDto.filters.firstname) {
-        filterConditions.firstname = ILike(
-          `%${listAccountDto.filters.firstname}%`,
-        );
+        where.firstname = ILike(`%${listAccountDto.filters.firstname}%`);
       }
       if (listAccountDto.filters.lastname) {
-        filterConditions.lastname = ILike(
-          `%${listAccountDto.filters.lastname}%`,
-        );
+        where.lastname = ILike(`%${listAccountDto.filters.lastname}%`);
       }
-
       if (listAccountDto.filters.confirmed !== undefined) {
-        filterConditions.confirmed = listAccountDto.filters.confirmed;
+        where.confirmed = listAccountDto.filters.confirmed;
       }
-      where[0] = filterConditions;
     }
 
     const [items, total] = await this.accountRepository.findAndCount({
       where,
+      relations: ['role'],
       skip: (page - 1) * pageSize,
       take: pageSize,
     });
@@ -231,34 +229,26 @@ export class AccountsService {
   async getStats(): Promise<SuccessResponse<AccountStats>> {
     const rawStats = await this.accountRepository
       .createQueryBuilder('account')
-      .select('account.role', 'role')
+      .leftJoin('account.role', 'role')
+      .select('role.name', 'roleName')
       .addSelect('COUNT(account.id)', 'count')
-      .groupBy('account.role')
-      .getRawMany();
+      .groupBy('role.name')
+      .getRawMany<{ roleName: string | null; count: string }>();
 
-    let admins = 0;
-    let constructionSiteManagers = 0;
-    let productKeepers = 0;
+    const roles: Record<string, number> = {};
+    let unassigned = 0;
 
     for (const stat of rawStats) {
       const count = parseInt(stat.count, 10);
-      switch (stat.role) {
-        case AccountRole.ADMIN:
-        case AccountRole.ADMIN1:
-        case AccountRole.ADMIN2:
-          admins += count;
-          break;
-        case AccountRole.CONSTRUCTION_SITE_MANAGER:
-          constructionSiteManagers = count;
-          break;
-        case AccountRole.PRODUCT_KEEPER:
-          productKeepers = count;
-          break;
+      if (stat.roleName) {
+        roles[stat.roleName] = count;
+      } else {
+        unassigned = count;
       }
     }
 
     return successResponse(
-      { admins, constructionSiteManagers, productKeepers },
+      { roles, unassigned },
       'Statistiques des comptes récupérées avec succès',
     );
   }
@@ -276,7 +266,6 @@ export class AccountsService {
   ): Promise<SuccessResponse<Account>> {
     const account = await this.getAccountById(id);
 
-    // Check username uniqueness if being updated
     if (
       updateAccountDto.username &&
       updateAccountDto.username !== account.data.username
@@ -291,9 +280,36 @@ export class AccountsService {
       }
     }
 
+    // Handle roleId update
+    if (updateAccountDto.roleId !== undefined) {
+      if (updateAccountDto.roleId === null) {
+        // Explicitly remove the role
+        account.data.role = null as any;
+      } else {
+        const role = await this.roleRepository.findOne({
+          where: { id: updateAccountDto.roleId },
+        });
+        if (!role) {
+          throw new NotFoundException(
+            `Rôle avec l'ID ${updateAccountDto.roleId} introuvable`,
+          );
+        }
+        account.data.role = role;
+      }
+      // Remove roleId from the DTO so Object.assign doesn't try to set it directly
+      delete updateAccountDto.roleId;
+    }
+
     Object.assign(account.data, updateAccountDto);
     const updatedAccount = await this.accountRepository.save(account.data);
-    return successResponse(updatedAccount, 'Compte mis à jour avec succès');
+
+    // Re-fetch with relations
+    const fullAccount = await this.accountRepository.findOne({
+      where: { id: updatedAccount.id },
+      relations: ['role'],
+    });
+
+    return successResponse(fullAccount!, 'Compte mis à jour avec succès');
   }
 
   async remove(id: number): Promise<SuccessResponse<null>> {
@@ -303,7 +319,10 @@ export class AccountsService {
   }
 
   private async getAccountById(id: number): Promise<SuccessResponse<Account>> {
-    const account = await this.accountRepository.findOne({ where: { id } });
+    const account = await this.accountRepository.findOne({
+      where: { id },
+      relations: ['role'],
+    });
     if (!account) {
       throw new NotFoundException(`Compte avec l'ID ${id} introuvable`);
     }

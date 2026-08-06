@@ -7,6 +7,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Permission } from './Permission.entity';
+import { Account } from '../../accounts-module/entities/account.entity';
 
 @Entity()
 export class Role {
@@ -27,4 +28,7 @@ export class Role {
     eager: true,
   })
   permissions: Permission[];
+
+  @OneToMany(() => Account, (account) => account.role)
+  accounts: Account[];
 }

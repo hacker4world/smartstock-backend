@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Account } from './entities/account.entity';
+import { Role } from '../roles-module/entities/Role.entity';
 import { AccountsController } from './accounts.controller';
 import { AccountsService } from './accounts.service';
 import { SharedJwtModule } from '../common/jwt/jwt.module';
@@ -15,6 +16,7 @@ import { Return } from 'src/request-return-module/entities/return.entity';
   imports: [
     TypeOrmModule.forFeature([
       Account,
+      Role,
       Import,
       Export,
       ProductRequest,

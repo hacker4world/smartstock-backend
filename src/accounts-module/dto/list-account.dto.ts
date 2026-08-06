@@ -2,19 +2,17 @@ import {
   IsOptional,
   IsInt,
   Min,
-  IsObject,
   ValidateNested,
   IsString,
-  IsEnum,
-  IsBoolean, // ← new import
+  IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { AccountRole } from '../../common/enums/account-role.enum';
 
 class AccountFilters {
   @IsOptional()
-  @IsEnum(AccountRole)
-  role?: AccountRole;
+  @IsInt()
+  @Type(() => Number)
+  roleId?: number;
 
   @IsOptional()
   @IsString()
@@ -30,7 +28,7 @@ class AccountFilters {
 
   @IsOptional()
   @IsBoolean()
-  @Type(() => Boolean) // ← new field
+  @Type(() => Boolean)
   confirmed?: boolean;
 }
 

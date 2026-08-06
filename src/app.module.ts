@@ -17,6 +17,7 @@ import { CalendarModule } from './calendar-module/calendar.module';
 import { RequestReturnModule } from './request-return-module/request-return.module';
 import { EventsModule } from './events-module/events.module';
 import { RolesModule } from './roles-module/roles.module';
+import { PermissionsModule } from './common/permissions/permissions.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { RolesModule } from './roles-module/roles.module';
     }),
 
     SharedJwtModule,
+    PermissionsModule,
 
     // Configure TypeORM connection to PostgreSQL
     TypeOrmModule.forRootAsync({

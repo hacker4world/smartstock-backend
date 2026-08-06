@@ -1,5 +1,4 @@
-import { IsOptional, IsString, IsNotEmpty, IsEnum } from 'class-validator';
-import { AccountRole } from '../../common/enums/account-role.enum';
+import { IsOptional, IsString, IsNotEmpty, IsInt } from 'class-validator';
 
 export class UpdateAccountDto {
   @IsOptional()
@@ -18,6 +17,6 @@ export class UpdateAccountDto {
   username?: string;
 
   @IsOptional()
-  @IsEnum(AccountRole)
-  role?: AccountRole;
+  @IsInt()
+  roleId?: number;
 }

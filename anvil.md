@@ -1,86 +1,36 @@
-### Project overview :
-This is the backend of a stock management system, this system will manage :
-- products
-- supprliers
-- manufacturers
-- construction sites
-- product categorization (family, subfamily, category)
-- product entries and sales
-- configuration (warehouses and product measuring units)
+## 1. Project Summary
+- **Purpose:** A NestJS backend application for inventory and stock management, featuring product tracking, supplier/manufacturer management, account management, and event tracking.
+- **Architecture:** Modular NestJS application with feature-based modules, following the enterprise framework's standard architecture.
 
-### Project techstack :
-- Main framework : NestJs + Typescript
-- Database : Postgresql + Typeorm
+## 2. Core Tech Stack
+- **Languages:** TypeScript 5.7.3
+- **Frontend:** N/A (Backend-only project)
+- **Backend:** NestJS 11.x with Express
+- **Database & ORM:** PostgreSQL with TypeORM 0.3.28
+- **Infrastructure:** Docker Compose (implied by .env files and uploads directory)
 
-### Architecture
-Currently, this project will use a monolith architecture but will later be converted into microservice architecture
+## 3. Directory Map (Where things live)
+- `/` (Root): Configuration files (package.json, tsconfig.json, nest-cli.json), source code (src/), test files (test/), build output (dist/), uploads directory, and documentation (anvil.md, README.md)
+- `/src`: Main application source with feature modules (accounts-module, calendar-module, classification-module, construction-site-module, events-module, import-export-module, notifications-module, product-module, request-return-module, supplier-manufacturer-module), common utilities, and bootstrap logic
+- `/src/common`: Shared utilities, decorators, guards, interceptors, and filters
+- `/test`: Jest test configuration and test files
+- `/uploads`: File upload storage directory
+- `/dist`: Compiled TypeScript output directory
 
-The backend is decomposed into **domain modules** under `/src`. Each module contains:
-- `*.module.ts` — NestJS module definition
-- `*.controller.ts` — REST API endpoints
-- `*.service.ts` — Business logic
-- `entities/` — TypeORM entity definitions
-- `dto/` — Request/response DTOs with validation decorators
-- `enums/` — Enum definitions (if applicable)
+## 4. Architecture & Data Flow
+- **Routing/Wiring:** NestJS modular architecture with feature modules. Main application bootstraps in main.ts with global validation pipes and CORS enabled. Routes are organized within each feature module's controller.
+- **State/Data Management:** TypeORM for database operations with PostgreSQL. Uses Entity classes for data models. Modules follow NestJS pattern with Controllers, Services, and Entities.
+- **Auth Strategy:** JWT authentication (@nestjs/jwt) with cookie-parser for session management. Global validation pipe enforces DTO schemas using class-validator and class-transformer.
 
-Each module is a folder inside /src folder that contains :
-- Nestjs module file
-- Controller file
-- Service file
-- Database entities (inside "entities" folder)
-- request dtos (typescript interfaces inside "dto" folder)
-- enums (if entities use them, inside "enums" folder)
+## 5. Execution Commands (DO NOT GUESS THESE)
+- **Install Dependencies:** `npm install`
+- **Run Dev Server:** `npm run start:dev`
+- **Run Build:** `npm run build`
+- **Run Linter/Formatter:** `npm run lint` (ESLint with Prettier)
+- **Run Tests:** `npm test` (Jest)
+- **Run Seed:** `npm run seed`
 
-### Current implemented modules :
-1. configuration module :
-Manages base configuration entities: **warehouses** (stock locations) and **units** (measurement units like kg, liter, piece).
-
-2. classification module :
-Manages the **product classification hierarchy** used to categorize products:
-**Family** → **Subfamily** → **Category** (single chain, top-down).
-
-**Constraints:**
-- A `Family` can have many `Subfamilies`
-- A `Subfamily` belongs to exactly one `Family`, can have many `Categories`
-- A `Category` belongs to exactly one `Subfamily`
-- All relationships are **non-nullable** (must provide parent ID on creation)
-
-3. Supplier & Manufacturer Module :
-Manages **suppliers** (vendors who provide products) and **manufacturers** (companies that produce products).
-
-Both services implement a `findFiltered()` method with:
-- **Pagination:** `page` and `pageSize` query params in the POST body
-- **Max page size:** Controlled via the `PAGE_SIZE` env variable (default: 20)
-- **Filtering:** Uses `ILike` for case-insensitive partial matching on `name`, `contact`, and (for manufacturers) `address`
-- **Response shape:**
-  ```ts
-  {
-    message: string,
-    data: {
-      items: Entity[],
-      total: number,
-      page: number,
-      pageSize: number
-    }
-  }
-
-### Shared utilities :
-Path: src/common/utils/success-response.ts
-
-A standardized response wrapper used across all services:
-
-interface SuccessResponse<T> {
-  message: string;
-  data: T;
-}
-Factory function: successResponse<T>(data, message?) defaults message to "Operation completed successfully".
-
-### App Bootstrap
-File: src/main.ts
-
-CORS: Enabled for http://localhost:8080 with credentials
-Global ValidationPipe:
-whitelist: true — strips unknown properties
-forbidNonWhitelisted: true — throws error on unknown properties
-transform: true — auto-transforms payloads to DTO instances
-Port: From PORT env variable, defaults to 3000
+## 6. Coding Conventions & QA
+- **Patterns:** NestJS standard patterns with feature modules, dependency injection, DTO validation, and global pipes. Uses WebSocket support via Socket.IO for real-time features. File uploads handled with Express static files.
+- **Naming Conventions:** TypeScript files use PascalCase for modules/controllers (e.g., app.controller.ts), snake_case for entities and services. Module directories use kebab-case (e.g., accounts-module).
+- **Testing Setup:** Jest for unit and integration testing. Test files use `.spec.ts` suffix. Test configuration in package.json with ts-jest transformer. Coverage reports generated to `/coverage` directory.
