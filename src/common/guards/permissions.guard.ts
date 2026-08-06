@@ -84,8 +84,9 @@ export class PermissionsGuard implements CanActivate {
     );
 
     if (!hasPermission) {
+      console.log(`Required permission : ${requiredPermission}`);
       throw new ForbiddenException(
-        `Vous n'avez pas la permission requise (« ${requiredPermission} ») pour accéder à cette ressource.`,
+        `Vous n'avez pas la permission requise pour accéder à cette ressource.`,
       );
     }
 

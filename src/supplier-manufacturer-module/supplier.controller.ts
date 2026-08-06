@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { SupplierService } from './supplier.service';
 import { CreateSupplierDto } from './dto/create-supplier.dto';
@@ -14,12 +15,17 @@ import { UpdateSupplierDto } from './dto/update-supplier.dto';
 import { ListSupplierDto } from './dto/list-supplier.dto';
 import { SuccessResponse } from '../common/utils/success-response';
 import { Supplier } from './entities/supplier.entity';
+import { RequirePermission } from 'src/common/decorators/require-permission.decorator';
+import { PermissionsGuard } from 'src/common/guards/permissions.guard';
+import { PermissionName } from 'src/roles-module/permission.enum';
 
 @Controller('suppliers')
 export class SupplierController {
   constructor(private readonly supplierService: SupplierService) {}
 
   @Post()
+  @UseGuards(PermissionsGuard)
+  @RequirePermission(PermissionName.CREATE_SUPPLIER)
   create(
     @Body() createSupplierDto: CreateSupplierDto,
   ): Promise<SuccessResponse<Supplier>> {
@@ -52,6 +58,8 @@ export class SupplierController {
   }
 
   @Patch(':id')
+  @UseGuards(PermissionsGuard)
+  @RequirePermission(PermissionName.UPDATE_SUPPLIER)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateSupplierDto: UpdateSupplierDto,
@@ -60,6 +68,8 @@ export class SupplierController {
   }
 
   @Delete(':id')
+  @UseGuards(PermissionsGuard)
+  @RequirePermission(PermissionName.DELETE_SUPPLIER)
   remove(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<SuccessResponse<null>> {
@@ -67,6 +77,8 @@ export class SupplierController {
   }
 
   @Get(':id/stats')
+  @UseGuards(PermissionsGuard)
+  @RequirePermission(PermissionName.VIEW_SUPPLIER)
   getStats(@Param('id', ParseIntPipe) id: number): Promise<
     SuccessResponse<{
       productCount: number;

@@ -20,12 +20,12 @@ import { PermissionName } from 'src/roles-module/permission.enum';
 import { RequirePermission } from 'src/common/decorators/require-permission.decorator';
 
 @Controller('products')
-@UseGuards(PermissionsGuard)
-@RequirePermission(PermissionName.VIEW_PRODUCT)
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   @Post()
+  @UseGuards(PermissionsGuard)
+  @RequirePermission(PermissionName.CREATE_PRODUCT)
   create(
     @Body() createProductDto: CreateProductDto,
   ): Promise<SuccessResponse<Product>> {
@@ -50,6 +50,8 @@ export class ProductController {
   }
 
   @Get(':id')
+  @UseGuards(PermissionsGuard)
+  @RequirePermission(PermissionName.VIEW_PRODUCT)
   findOne(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<SuccessResponse<Product>> {
@@ -57,6 +59,8 @@ export class ProductController {
   }
 
   @Patch(':id')
+  @UseGuards(PermissionsGuard)
+  @RequirePermission(PermissionName.UPDATE_PRODUCT)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateProductDto: UpdateProductDto,
@@ -65,6 +69,8 @@ export class ProductController {
   }
 
   @Delete(':id')
+  @UseGuards(PermissionsGuard)
+  @RequirePermission(PermissionName.DELETE_PRODUCT)
   remove(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<SuccessResponse<null>> {

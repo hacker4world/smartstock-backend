@@ -10,6 +10,7 @@ import {
   ClassSerializerInterceptor,
   Get,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { AccountsService } from './accounts.service';
 import { CreateAccountDto } from './dto/create-account.dto';
@@ -20,6 +21,9 @@ import { Account } from './entities/account.entity';
 import { AccountStats } from './dto/account-stats.dto';
 import { LoginDto } from './dto/login.dto';
 import type { Response } from 'express';
+import { PermissionsGuard } from 'src/common/guards/permissions.guard';
+import { PermissionName } from 'src/roles-module/permission.enum';
+import { RequirePermission } from 'src/common/decorators/require-permission.decorator';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('accounts')
@@ -81,6 +85,8 @@ export class AccountsController {
   }
 
   @Patch(':id/accept')
+  @UseGuards(PermissionsGuard)
+  @RequirePermission(PermissionName.CONFIRM_PENDING_ACCOUNT)
   accept(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<SuccessResponse<Account>> {
@@ -88,6 +94,8 @@ export class AccountsController {
   }
 
   @Patch(':id')
+  @UseGuards(PermissionsGuard)
+  @RequirePermission(PermissionName.UPDATE_CONFIRMED_ACCOUNT)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateAccountDto: UpdateAccountDto,

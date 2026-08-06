@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { ManufacturerService } from './manufacturer.service';
 import { CreateManufacturerDto } from './dto/create-manufacturer.dto';
@@ -14,12 +15,17 @@ import { UpdateManufacturerDto } from './dto/update-manufacturer.dto';
 import { ListManufacturerDto } from './dto/list-manufacturer.dto';
 import { SuccessResponse } from '../common/utils/success-response';
 import { Manufacturer } from './entities/manufacturer.entity';
+import { RequirePermission } from 'src/common/decorators/require-permission.decorator';
+import { PermissionsGuard } from 'src/common/guards/permissions.guard';
+import { PermissionName } from 'src/roles-module/permission.enum';
 
 @Controller('manufacturers')
 export class ManufacturerController {
   constructor(private readonly manufacturerService: ManufacturerService) {}
 
   @Post()
+  @UseGuards(PermissionsGuard)
+  @RequirePermission(PermissionName.CREATE_MANUFACTURER)
   create(
     @Body() createManufacturerDto: CreateManufacturerDto,
   ): Promise<SuccessResponse<Manufacturer>> {
@@ -45,6 +51,8 @@ export class ManufacturerController {
   }
 
   @Get(':id')
+  @UseGuards(PermissionsGuard)
+  @RequirePermission(PermissionName.VIEW_MANUFACTURER)
   findOne(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<SuccessResponse<Manufacturer>> {
@@ -52,6 +60,8 @@ export class ManufacturerController {
   }
 
   @Patch(':id')
+  @UseGuards(PermissionsGuard)
+  @RequirePermission(PermissionName.UPDATE_MANUFACTURER)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateManufacturerDto: UpdateManufacturerDto,
@@ -60,6 +70,8 @@ export class ManufacturerController {
   }
 
   @Delete(':id')
+  @UseGuards(PermissionsGuard)
+  @RequirePermission(PermissionName.DELETE_MANUFACTURER)
   remove(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<SuccessResponse<null>> {
@@ -67,6 +79,8 @@ export class ManufacturerController {
   }
 
   @Get(':id/stats')
+  @UseGuards(PermissionsGuard)
+  @RequirePermission(PermissionName.VIEW_MANUFACTURER)
   getStats(@Param('id', ParseIntPipe) id: number): Promise<
     SuccessResponse<{
       importCount: number;

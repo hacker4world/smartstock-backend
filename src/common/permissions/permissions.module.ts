@@ -7,6 +7,6 @@ import { PermissionsGuard } from '../guards/permissions.guard';
 @Module({
   imports: [SharedJwtModule, AccountsModule],
   providers: [PermissionsGuard],
-  exports: [PermissionsGuard],
+  exports: [PermissionsGuard, SharedJwtModule, AccountsModule],
 })
 export class PermissionsModule {}
