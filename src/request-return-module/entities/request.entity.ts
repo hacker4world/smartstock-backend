@@ -32,7 +32,11 @@ export class ProductRequest {
   })
   requestItems: RequestItem[];
 
-  @ManyToOne(() => ConstructionSite, { nullable: true, eager: true })
+  @ManyToOne(() => ConstructionSite, {
+    nullable: true,
+    eager: true,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'constructionSiteId' })
   constructionSite: ConstructionSite;
 

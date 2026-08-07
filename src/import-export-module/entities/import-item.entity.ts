@@ -29,7 +29,11 @@ export class ImportItem {
   @JoinColumn({ name: 'importId' })
   import: Import;
 
-  @ManyToOne(() => Product, { nullable: false, eager: true })
+  @ManyToOne(() => Product, {
+    nullable: false,
+    eager: true,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'productId' })
   product: Product;
 

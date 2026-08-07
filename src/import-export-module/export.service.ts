@@ -464,19 +464,20 @@ export class ExportService {
           where: { id: item.product.id },
         });
 
-        if (product) {
-          product.stock = Number(product.stock) - Number(item.exitedStock);
-          await this.productRepository.save(product);
+        if (!product) {
+          throw new NotFoundException(
+            `Produit avec l'ID ${item.product.id} introuvable`,
+          );
+        }
 
-          // Check if stock falls below minimum threshold
-          if (Number(product.stock) < Number(product.minimumStock)) {
-            this.notificationsService
-              .create({
-                message: `Alerte stock : "${product.name}" a atteint ${product.stock} unités (seuil minimum : ${product.minimumStock})`,
-                type: NotificationType.STOCK_ALERT,
-              })
-              .catch(() => {});
-          }
+        const currentStock = Number(product.stock);
+        const exitedStock = Number(item.exitedStock);
+
+        if (currentStock < exitedStock) {
+          throw new BadRequestException(
+            `Stock insuffisant pour le produit "${product.name}". ` +
+              `Stock actuel: ${currentStock}, quantité demandée: ${exitedStock}`,
+          );
         }
       }
     }
@@ -491,6 +492,25 @@ export class ExportService {
         if (product) {
           product.stock = Number(product.stock) - Number(item.exitedStock);
           await this.productRepository.save(product);
+
+          // Notify if stock reaches 0
+          if (Number(product.stock) === 0) {
+            this.notificationsService
+              .create({
+                message: `Alerte stock épuisé : "${product.name}" est en rupture de stock (0 unité restante)`,
+                type: NotificationType.STOCK_ALERT,
+              })
+              .catch(() => {});
+          }
+          // Notify if stock falls below minimum threshold
+          else if (Number(product.stock) < Number(product.minimumStock)) {
+            this.notificationsService
+              .create({
+                message: `Alerte stock : "${product.name}" a atteint ${product.stock} unités (seuil minimum : ${product.minimumStock})`,
+                type: NotificationType.STOCK_ALERT,
+              })
+              .catch(() => {});
+          }
         }
       }
     }

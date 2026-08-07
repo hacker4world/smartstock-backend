@@ -42,7 +42,11 @@ export class Export {
   warehouse: Warehouse;
 
   // --- Construction site relation (for to-construction-site) ---
-  @ManyToOne(() => ConstructionSite, { nullable: true, eager: true })
+  @ManyToOne(() => ConstructionSite, {
+    nullable: true,
+    eager: true,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'constructionSiteId' })
   constructionSite: ConstructionSite;
 

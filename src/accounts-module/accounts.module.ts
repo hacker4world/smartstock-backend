@@ -11,6 +11,7 @@ import { Export } from 'src/import-export-module/entities/export.entity';
 import { Import } from 'src/import-export-module/entities/import.entity';
 import { ProductRequest } from 'src/request-return-module/entities/request.entity';
 import { Return } from 'src/request-return-module/entities/return.entity';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -27,7 +28,7 @@ import { Return } from 'src/request-return-module/entities/return.entity';
     NotificationsModule,
   ],
   controllers: [AccountsController],
-  providers: [AccountsService],
+  providers: [AccountsService, JwtAuthGuard],
   exports: [AccountsService],
 })
 export class AccountsModule {}

@@ -7,6 +7,7 @@ import {
   Param,
   Body,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { ProductReturnService } from './return.service';
 import { CreateReturnDto } from './dto/create-return.dto';
@@ -14,6 +15,9 @@ import { ListReturnDto } from './dto/list-return.dto';
 import { ConfirmReturnDto } from './dto/confirm-return.dto';
 import { SuccessResponse } from '../common/utils/success-response';
 import { Return } from './entities/return.entity';
+import { PermissionsGuard } from 'src/common/guards/permissions.guard';
+import { RequirePermission } from 'src/common/decorators/require-permission.decorator';
+import { PermissionName } from 'src/roles-module/permission.enum';
 
 @Controller('product-return')
 export class ReturnController {
@@ -27,6 +31,8 @@ export class ReturnController {
   }
 
   @Post('list')
+  @UseGuards(PermissionsGuard)
+  @RequirePermission(PermissionName.ACCESS_REQUESTS_PAGE)
   async findFiltered(@Body() listDto: ListReturnDto): Promise<
     SuccessResponse<{
       items: Return[];
@@ -40,6 +46,8 @@ export class ReturnController {
   }
 
   @Patch(':id/confirm')
+  @UseGuards(PermissionsGuard)
+  @RequirePermission(PermissionName.CONFIRM_REQUEST)
   async confirm(
     @Param('id', ParseIntPipe) id: number,
     @Body() confirmDto: ConfirmReturnDto,
@@ -48,6 +56,8 @@ export class ReturnController {
   }
 
   @Get(':id')
+  @UseGuards(PermissionsGuard)
+  @RequirePermission(PermissionName.VIEW_REQUEST)
   async findOne(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<SuccessResponse<Return>> {
@@ -55,6 +65,8 @@ export class ReturnController {
   }
 
   @Delete(':id')
+  @UseGuards(PermissionsGuard)
+  @RequirePermission(PermissionName.DENY_REQUEST)
   async remove(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<SuccessResponse<null>> {
