@@ -10,6 +10,11 @@ import {
   SuccessResponse,
   successResponse,
 } from '../common/utils/success-response';
+import { Unit } from 'src/configuration-module/entities/unit.entity';
+import { Warehouse } from 'src/configuration-module/entities/warehouse.entity';
+import { Category } from 'src/classification-module/entities/category.entity';
+
+const RELATIONS = ['unit', 'warehouse', 'category', 'suppliers'];
 
 @Injectable()
 export class ProductService {
@@ -32,12 +37,15 @@ export class ProductService {
       category: { id: createProductDto.categoryId },
     });
     const savedProduct = await this.productRepository.save(product);
-    return successResponse(savedProduct, 'Produit créé avec succès');
+
+    // Reload with full relation objects for the frontend
+    const createdProduct = await this.findOneEntity(savedProduct.id);
+    return successResponse(createdProduct, 'Produit créé avec succès');
   }
 
   async findAll(): Promise<SuccessResponse<Product[]>> {
     const products = await this.productRepository.find({
-      relations: ['unit', 'warehouse', 'category', 'suppliers'],
+      relations: RELATIONS,
     });
     return successResponse(products, 'Produits récupérés avec succès');
   }
@@ -53,80 +61,64 @@ export class ProductService {
   > {
     const maxPageSize = this.configService.get<number>('PAGE_SIZE', 20);
     const page = listProductDto.page ?? 1;
-    let pageSize = listProductDto.pageSize ?? maxPageSize;
+    const pageSize = Math.min(
+      listProductDto.pageSize ?? maxPageSize,
+      maxPageSize,
+    );
 
-    if (pageSize > maxPageSize) {
-      pageSize = maxPageSize;
-    }
+    const query = this.productRepository
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.unit', 'unit')
+      .leftJoinAndSelect('product.warehouse', 'warehouse')
+      .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.suppliers', 'suppliers')
+      .skip((page - 1) * pageSize)
+      .take(pageSize);
 
-    // If filtering by supplierId, we need to use a query builder
-    // because ManyToMany relations can't be filtered with simple FindOptionsWhere
-    if (listProductDto.filters?.supplierId) {
-      const supplierId = listProductDto.filters.supplierId;
-
-      const [items, total] = await this.productRepository
-        .createQueryBuilder('product')
-        .leftJoinAndSelect('product.unit', 'unit')
-        .leftJoinAndSelect('product.warehouse', 'warehouse')
-        .leftJoinAndSelect('product.category', 'category')
-        .leftJoinAndSelect('product.suppliers', 'suppliers')
-        .innerJoin(
+    const filters = listProductDto.filters;
+    if (filters) {
+      if (filters.name) {
+        query.andWhere('product.name ILIKE :name', {
+          name: `%${filters.name}%`,
+        });
+      }
+      if (filters.unitId) {
+        query.andWhere('unit.id = :unitId', { unitId: filters.unitId });
+      }
+      if (filters.categoryId) {
+        query.andWhere('category.id = :categoryId', {
+          categoryId: filters.categoryId,
+        });
+      }
+      if (filters.warehouseId) {
+        query.andWhere('warehouse.id = :warehouseId', {
+          warehouseId: filters.warehouseId,
+        });
+      }
+      if (filters.minimumStock !== undefined) {
+        query.andWhere('product.stock <= :minimumStock', {
+          minimumStock: filters.minimumStock,
+        });
+      }
+      if (filters.averagePrice !== undefined) {
+        query.andWhere('product.averagePrice = :averagePrice', {
+          averagePrice: filters.averagePrice,
+        });
+      }
+      if (filters.stock !== undefined) {
+        query.andWhere('product.stock = :stock', { stock: filters.stock });
+      }
+      if (filters.supplierId) {
+        query.innerJoin(
           'product.suppliers',
           'filtered_supplier',
           'filtered_supplier.id = :supplierId',
-          { supplierId },
-        )
-        .skip((page - 1) * pageSize)
-        .take(pageSize)
-        .getManyAndCount();
-
-      const lastPage = page * pageSize >= total;
-
-      return successResponse(
-        { items, total, page, pageSize, lastPage },
-        'Produits récupérés avec succès',
-      );
-    }
-
-    const where: any = {};
-
-    if (listProductDto.filters) {
-      if (listProductDto.filters.name) {
-        where.name = ILike(`%${listProductDto.filters.name}%`);
-      }
-
-      if (listProductDto.filters.unitId) {
-        where.unit = { id: listProductDto.filters.unitId };
-      }
-
-      if (listProductDto.filters.categoryId) {
-        where.category = { id: listProductDto.filters.categoryId };
-      }
-
-      if (listProductDto.filters.warehouseId) {
-        where.warehouse = { id: listProductDto.filters.warehouseId };
-      }
-
-      if (listProductDto.filters.minimumStock !== undefined) {
-        where.stock = LessThanOrEqual(listProductDto.filters.minimumStock);
-      }
-
-      if (listProductDto.filters.averagePrice !== undefined) {
-        where.averagePrice = listProductDto.filters.averagePrice;
-      }
-
-      if (listProductDto.filters.stock !== undefined) {
-        where.stock = listProductDto.filters.stock;
+          { supplierId: filters.supplierId },
+        );
       }
     }
 
-    const [items, total] = await this.productRepository.findAndCount({
-      where,
-      relations: ['unit', 'warehouse', 'category', 'suppliers'],
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-    });
-
+    const [items, total] = await query.getManyAndCount();
     const lastPage = page * pageSize >= total;
 
     return successResponse(
@@ -136,13 +128,7 @@ export class ProductService {
   }
 
   async findOne(id: number): Promise<SuccessResponse<Product>> {
-    const product = await this.productRepository.findOne({
-      where: { id },
-      relations: ['unit', 'warehouse', 'category', 'suppliers'],
-    });
-    if (!product) {
-      throw new NotFoundException(`Produit avec l'ID ${id} introuvable`);
-    }
+    const product = await this.findOneEntity(id);
     return successResponse(product, 'Produit récupéré avec succès');
   }
 
@@ -150,41 +136,45 @@ export class ProductService {
     id: number,
     updateProductDto: UpdateProductDto,
   ): Promise<SuccessResponse<Product>> {
-    const product = await this.findOne(id);
+    const product = await this.findOneEntity(id);
 
-    // Update direct properties (name, minimumStock)
     if (updateProductDto.name !== undefined) {
-      product.data.name = updateProductDto.name;
+      product.name = updateProductDto.name;
     }
     if (updateProductDto.minimumStock !== undefined) {
-      product.data.minimumStock = updateProductDto.minimumStock;
+      product.minimumStock = updateProductDto.minimumStock;
     }
-
-    // Update relations using the same pattern as create()
     if (updateProductDto.unitId !== undefined) {
-      product.data.unit = { id: updateProductDto.unitId } as any;
+      product.unit = { id: updateProductDto.unitId } as Unit;
     }
     if (updateProductDto.warehouseId !== undefined) {
-      product.data.warehouse = { id: updateProductDto.warehouseId } as any;
+      product.warehouse = { id: updateProductDto.warehouseId } as Warehouse;
     }
     if (updateProductDto.categoryId !== undefined) {
-      product.data.category = { id: updateProductDto.categoryId } as any;
+      product.category = { id: updateProductDto.categoryId } as Category;
     }
 
-    await this.productRepository.save(product.data);
+    await this.productRepository.save(product);
 
     // Reload with full relation objects for the frontend
-    const updatedProduct = (await this.productRepository.findOne({
-      where: { id },
-      relations: ['unit', 'warehouse', 'category', 'suppliers'],
-    })) as Product;
-
+    const updatedProduct = await this.findOneEntity(id);
     return successResponse(updatedProduct, 'Produit mis à jour avec succès');
   }
 
   async remove(id: number): Promise<SuccessResponse<null>> {
-    const product = await this.findOne(id);
-    await this.productRepository.remove(product.data);
+    const product = await this.findOneEntity(id);
+    await this.productRepository.remove(product);
     return successResponse(null, 'Produit supprimé avec succès');
+  }
+
+  private async findOneEntity(id: number): Promise<Product> {
+    const product = await this.productRepository.findOne({
+      where: { id },
+      relations: RELATIONS,
+    });
+    if (!product) {
+      throw new NotFoundException(`Produit avec l'ID ${id} introuvable`);
+    }
+    return product;
   }
 }
