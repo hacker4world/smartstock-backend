@@ -15,6 +15,9 @@ import { NotificationsModule } from './notifications-module/notifications.module
 import { WebsocketModule } from './common/websocket/websocket.module';
 import { CalendarModule } from './calendar-module/calendar.module';
 import { RequestReturnModule } from './request-return-module/request-return.module';
+import { EventsModule } from './events-module/events.module';
+import { RolesModule } from './roles-module/roles.module';
+import { PermissionsModule } from './common/permissions/permissions.module';
 
 @Module({
   imports: [
@@ -24,6 +27,7 @@ import { RequestReturnModule } from './request-return-module/request-return.modu
     }),
 
     SharedJwtModule,
+    PermissionsModule,
 
     // Configure TypeORM connection to PostgreSQL
     TypeOrmModule.forRootAsync({
@@ -41,7 +45,6 @@ import { RequestReturnModule } from './request-return-module/request-return.modu
       }),
     }),
 
-    // Feature modules
     ConfigurationModule,
     ClassificationModule,
     SupplierManufacturerModule,
@@ -52,7 +55,9 @@ import { RequestReturnModule } from './request-return-module/request-return.modu
     NotificationsModule,
     WebsocketModule,
     CalendarModule,
-    RequestReturnModule
+    RequestReturnModule,
+    EventsModule,
+    RolesModule
   ],
   controllers: [AppController],
   providers: [AppService],

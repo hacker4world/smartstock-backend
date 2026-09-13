@@ -18,7 +18,11 @@ export class RequestItem {
   @Column({ type: 'decimal', precision: 12, scale: 2 })
   requestedStock: number;
 
-  @ManyToOne(() => Product, { nullable: false, eager: true })
+  @ManyToOne(() => Product, {
+    nullable: false,
+    eager: true,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'productId' })
   product: Product;
 

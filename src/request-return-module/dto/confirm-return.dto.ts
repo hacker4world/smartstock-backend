@@ -1,20 +1,18 @@
-// src/returns-module/dto/confirm-return.dto.ts
 import {
   IsArray,
-  IsBoolean,
-  IsNotEmpty,
-  IsNumber,
   ValidateNested,
+  IsBoolean,
+  IsInt,
+  IsString,
+  IsNotEmpty,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class ConfirmReturnItemDto {
-  @IsNumber()
-  @IsNotEmpty()
+class ConfirmReturnItemDto {
+  @IsInt()
   productId: number;
 
   @IsBoolean()
-  @IsNotEmpty()
   restock: boolean;
 }
 
@@ -22,6 +20,13 @@ export class ConfirmReturnDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ConfirmReturnItemDto)
-  @IsNotEmpty()
   items: ConfirmReturnItemDto[];
+
+  @IsString()
+  @IsNotEmpty()
+  transporterName: string;
+
+  @IsString()
+  @IsNotEmpty()
+  transporterMatricule: string;
 }

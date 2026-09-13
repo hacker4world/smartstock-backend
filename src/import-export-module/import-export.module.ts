@@ -18,6 +18,7 @@ import { Warehouse } from 'src/configuration-module/entities/warehouse.entity';
 import { ConstructionSite } from 'src/construction-site-module/entities/construction-site.entity';
 import { Account } from 'src/accounts-module/entities/account.entity';
 import { NotificationsModule } from 'src/notifications-module/notifications.module';
+import { DocumentModule } from 'src/common/document-generation/documents.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { NotificationsModule } from 'src/notifications-module/notifications.modu
     ]),
     ProductModule,
     NotificationsModule,
+    DocumentModule,
   ],
   controllers: [ImportController, ExportController],
   providers: [ImportService, ExportService],

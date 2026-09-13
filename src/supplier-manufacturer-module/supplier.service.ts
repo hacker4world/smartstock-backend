@@ -10,6 +10,8 @@ import {
   SuccessResponse,
   successResponse,
 } from '../common/utils/success-response';
+import { Product } from 'src/product-module/entities/product.entity';
+import { Import } from 'src/import-export-module/entities/import.entity';
 
 @Injectable()
 export class SupplierService {
@@ -17,6 +19,10 @@ export class SupplierService {
     @InjectRepository(Supplier)
     private readonly supplierRepository: Repository<Supplier>,
     private readonly configService: ConfigService,
+    @InjectRepository(Product)
+    private readonly productRepository: Repository<Product>,
+    @InjectRepository(Import)
+    private readonly importRepository: Repository<Import>,
   ) {}
 
   async create(
@@ -103,5 +109,31 @@ export class SupplierService {
     const supplier = await this.findOne(id);
     await this.supplierRepository.remove(supplier.data);
     return successResponse(null, 'Fournisseur supprimé avec succès');
+  }
+
+  async getStats(id: number): Promise<
+    SuccessResponse<{
+      productCount: number;
+      importCount: number;
+    }>
+  > {
+    // Verify supplier exists
+    await this.findOne(id);
+
+    const productCount = await this.productRepository
+      .createQueryBuilder('product')
+      .innerJoin('product.suppliers', 'supplier', 'supplier.id = :supplierId', {
+        supplierId: id,
+      })
+      .getCount();
+
+    const importCount = await this.importRepository.count({
+      where: { supplier: { id } },
+    });
+
+    return successResponse(
+      { productCount, importCount },
+      'Statistiques récupérées avec succès',
+    );
   }
 }

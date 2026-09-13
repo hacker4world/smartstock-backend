@@ -30,6 +30,7 @@ import {
 import { Account } from 'src/accounts-module/entities/account.entity';
 import { NotificationsService } from 'src/notifications-module/notifications.service';
 import { NotificationType } from 'src/notifications-module/enums/notification-type.enum';
+import { PdfGenerationService } from 'src/common/document-generation/document-generation.service';
 
 @Injectable()
 export class ExportService {
@@ -48,6 +49,7 @@ export class ExportService {
     @InjectRepository(Account)
     private readonly accountRepository: Repository<Account>,
     private readonly notificationsService: NotificationsService,
+    private readonly documentService: PdfGenerationService,
   ) {}
 
   async create(
@@ -462,19 +464,20 @@ export class ExportService {
           where: { id: item.product.id },
         });
 
-        if (product) {
-          product.stock = Number(product.stock) - Number(item.exitedStock);
-          await this.productRepository.save(product);
+        if (!product) {
+          throw new NotFoundException(
+            `Produit avec l'ID ${item.product.id} introuvable`,
+          );
+        }
 
-          // Check if stock falls below minimum threshold
-          if (Number(product.stock) < Number(product.minimumStock)) {
-            this.notificationsService
-              .create({
-                message: `Alerte stock : "${product.name}" a atteint ${product.stock} unités (seuil minimum : ${product.minimumStock})`,
-                type: NotificationType.STOCK_ALERT,
-              })
-              .catch(() => {});
-          }
+        const currentStock = Number(product.stock);
+        const exitedStock = Number(item.exitedStock);
+
+        if (currentStock < exitedStock) {
+          throw new BadRequestException(
+            `Stock insuffisant pour le produit "${product.name}". ` +
+              `Stock actuel: ${currentStock}, quantité demandée: ${exitedStock}`,
+          );
         }
       }
     }
@@ -489,9 +492,44 @@ export class ExportService {
         if (product) {
           product.stock = Number(product.stock) - Number(item.exitedStock);
           await this.productRepository.save(product);
+
+          // Notify if stock reaches 0
+          if (Number(product.stock) === 0) {
+            this.notificationsService
+              .create({
+                message: `Alerte stock épuisé : "${product.name}" est en rupture de stock (0 unité restante)`,
+                type: NotificationType.STOCK_ALERT,
+              })
+              .catch(() => {});
+          }
+          // Notify if stock falls below minimum threshold
+          else if (Number(product.stock) < Number(product.minimumStock)) {
+            this.notificationsService
+              .create({
+                message: `Alerte stock : "${product.name}" a atteint ${product.stock} unités (seuil minimum : ${product.minimumStock})`,
+                type: NotificationType.STOCK_ALERT,
+              })
+              .catch(() => {});
+          }
         }
       }
     }
+
+    let generatedDocument: any = null;
+
+    if (exportEntity.exportType == ExportType.EXTERNAL) {
+      generatedDocument =
+        await this.documentService.generateBonDeLivraisonForSortie(
+          exportEntity,
+        );
+    } else {
+      generatedDocument =
+        await this.documentService.generateFicheExpeditionForSortie(
+          exportEntity,
+        );
+    }
+
+    exportEntity.ficheExpedition = generatedDocument.filename;
 
     exportEntity.confirmed = true;
     const confirmedExport = await this.exportRepository.save(exportEntity);
@@ -506,13 +544,13 @@ export class ExportService {
     const result = await this.findOne(id);
     const exportEntity = result.data;
 
-    if (exportEntity.confirmed) {
-      throw new ConflictException(
-        'Impossible de supprimer une exportation déjà confirmée',
-      );
-    }
-
     await this.exportRepository.remove(exportEntity);
     return successResponse(null, 'Exportation supprimée avec succès');
+  }
+
+  async generateDocument(id: number) {
+    const exportEntity = await this.exportRepository.findOne({ where: { id } });
+
+    this.documentService.generateFicheExpeditionForSortie(exportEntity!);
   }
 }

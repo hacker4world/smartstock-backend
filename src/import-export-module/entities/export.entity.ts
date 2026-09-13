@@ -1,4 +1,3 @@
-// src/import-export-module/entities/export.entity.ts
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -43,7 +42,11 @@ export class Export {
   warehouse: Warehouse;
 
   // --- Construction site relation (for to-construction-site) ---
-  @ManyToOne(() => ConstructionSite, { nullable: true, eager: true })
+  @ManyToOne(() => ConstructionSite, {
+    nullable: true,
+    eager: true,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'constructionSiteId' })
   constructionSite: ConstructionSite;
 
@@ -102,6 +105,13 @@ export class Export {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  ficheExpedition: string;
 
   @ManyToOne(() => Account, { nullable: true, eager: true })
   @JoinColumn({ name: 'accountId' })

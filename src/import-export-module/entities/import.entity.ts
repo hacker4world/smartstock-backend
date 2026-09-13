@@ -34,11 +34,19 @@ export class Import {
   @Column({ type: 'varchar', length: 255, name: 'bonDeLivraison' })
   bonDeLivraison: string;
 
-  @ManyToOne(() => Supplier, { nullable: false, eager: true })
+  @ManyToOne(() => Supplier, {
+    nullable: false,
+    eager: true,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'supplierId' })
   supplier: Supplier;
 
-  @ManyToOne(() => Manufacturer, { nullable: false, eager: true })
+  @ManyToOne(() => Manufacturer, {
+    nullable: false,
+    eager: true,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'manufacturerId' })
   manufacturer: Manufacturer;
 

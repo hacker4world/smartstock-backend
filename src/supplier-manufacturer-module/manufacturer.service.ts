@@ -10,12 +10,15 @@ import {
   SuccessResponse,
   successResponse,
 } from '../common/utils/success-response';
+import { Import } from 'src/import-export-module/entities/import.entity';
 
 @Injectable()
 export class ManufacturerService {
   constructor(
     @InjectRepository(Manufacturer)
     private readonly manufacturerRepository: Repository<Manufacturer>,
+    @InjectRepository(Import)
+    private readonly importRepository: Repository<Import>,
     private readonly configService: ConfigService,
   ) {}
 
@@ -115,5 +118,23 @@ export class ManufacturerService {
     const manufacturer = await this.findOne(id);
     await this.manufacturerRepository.remove(manufacturer.data);
     return successResponse(null, 'Fabricant supprimé avec succès');
+  }
+
+  async getStats(id: number): Promise<
+    SuccessResponse<{
+      importCount: number;
+    }>
+  > {
+    // Verify manufacturer exists
+    await this.findOne(id);
+
+    const importCount = await this.importRepository.count({
+      where: { manufacturer: { id } },
+    });
+
+    return successResponse(
+      { importCount },
+      'Statistiques récupérées avec succès',
+    );
   }
 }

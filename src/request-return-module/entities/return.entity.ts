@@ -33,13 +33,26 @@ export class Return {
   })
   returnItems: ReturnItem[];
 
-  @ManyToOne(() => ConstructionSite, { nullable: true, eager: true })
+  @ManyToOne(() => ConstructionSite, {
+    nullable: true,
+    eager: true,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'constructionSiteId' })
   constructionSite: ConstructionSite;
 
   @ManyToOne(() => Account, { nullable: true, eager: true })
   @JoinColumn({ name: 'accountId' })
   account: Account;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  transporterName: string;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  transporterMatricule: string;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  bonRetour: string;
 
   @CreateDateColumn()
   createdAt: Date;

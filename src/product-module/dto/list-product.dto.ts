@@ -49,6 +49,12 @@ class ProductFilters {
   @Min(0)
   @Type(() => Number)
   stock?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Type(() => Number)
+  supplierId?: number;
 }
 
 export class ListProductDto {

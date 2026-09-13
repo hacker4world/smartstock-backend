@@ -10,6 +10,7 @@ import {
   ParseIntPipe,
   UseInterceptors,
   UploadedFiles,
+  UseGuards,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ImportService } from './import.service';
@@ -19,6 +20,9 @@ import { ListImportDto } from './dto/list-import.dto';
 import { SuccessResponse } from '../common/utils/success-response';
 import { Import } from './entities/import.entity';
 import { multerOptions } from '../common/multer/multer.config';
+import { PermissionsGuard } from 'src/common/guards/permissions.guard';
+import { RequirePermission } from 'src/common/decorators/require-permission.decorator';
+import { PermissionName } from 'src/roles-module/permission.enum';
 
 @Controller('imports')
 export class ImportController {
@@ -26,6 +30,8 @@ export class ImportController {
 
   @Post()
   @UseInterceptors(FilesInterceptor('files', 2, multerOptions))
+  @UseGuards(PermissionsGuard)
+  @RequirePermission(PermissionName.CREATE_IMPORT)
   create(
     @Body() createImportDto: CreateImportDto,
     @UploadedFiles() files: Express.Multer.File[],
@@ -58,6 +64,8 @@ export class ImportController {
   }
 
   @Get(':id')
+  @UseGuards(PermissionsGuard)
+  @RequirePermission(PermissionName.VIEW_IMPORT)
   findOne(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<SuccessResponse<Import>> {
@@ -82,6 +90,8 @@ export class ImportController {
   }
 
   @Patch(':id/confirm')
+  @UseGuards(PermissionsGuard)
+  @RequirePermission(PermissionName.CONFIRM_IMPORT)
   confirm(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<SuccessResponse<Import>> {
@@ -89,6 +99,8 @@ export class ImportController {
   }
 
   @Delete(':id')
+  @UseGuards(PermissionsGuard)
+  @RequirePermission(PermissionName.DENY_IMPORT)
   remove(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<SuccessResponse<null>> {

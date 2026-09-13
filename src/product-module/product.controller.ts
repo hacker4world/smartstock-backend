@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -14,12 +15,17 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { ListProductDto } from './dto/list-product.dto';
 import { SuccessResponse } from '../common/utils/success-response';
 import { Product } from './entities/product.entity';
+import { PermissionsGuard } from 'src/common/guards/permissions.guard';
+import { PermissionName } from 'src/roles-module/permission.enum';
+import { RequirePermission } from 'src/common/decorators/require-permission.decorator';
 
 @Controller('products')
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   @Post()
+  @UseGuards(PermissionsGuard)
+  @RequirePermission(PermissionName.CREATE_PRODUCT)
   create(
     @Body() createProductDto: CreateProductDto,
   ): Promise<SuccessResponse<Product>> {
@@ -44,6 +50,8 @@ export class ProductController {
   }
 
   @Get(':id')
+  @UseGuards(PermissionsGuard)
+  @RequirePermission(PermissionName.VIEW_PRODUCT)
   findOne(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<SuccessResponse<Product>> {
@@ -51,6 +59,8 @@ export class ProductController {
   }
 
   @Patch(':id')
+  @UseGuards(PermissionsGuard)
+  @RequirePermission(PermissionName.UPDATE_PRODUCT)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateProductDto: UpdateProductDto,
@@ -59,6 +69,8 @@ export class ProductController {
   }
 
   @Delete(':id')
+  @UseGuards(PermissionsGuard)
+  @RequirePermission(PermissionName.DELETE_PRODUCT)
   remove(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<SuccessResponse<null>> {

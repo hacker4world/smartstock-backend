@@ -29,7 +29,11 @@ export class ExportItem {
   @JoinColumn({ name: 'exportId' })
   export: Export;
 
-  @ManyToOne(() => Product, { nullable: false, eager: true })
+  @ManyToOne(() => Product, {
+    nullable: false,
+    eager: true,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'productId' })
   product: Product;
 

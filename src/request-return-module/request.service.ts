@@ -34,6 +34,7 @@ import {
 } from 'src/import-export-module/entities/export.entity';
 import { ExportItem } from 'src/import-export-module/entities/export-item.entity';
 import { TurnProductRequestIntoExportDto } from './dto/turn-product-request-into-export.dto';
+import { PdfGenerationService } from 'src/common/document-generation/document-generation.service';
 
 @Injectable()
 export class RequestService {
@@ -55,6 +56,7 @@ export class RequestService {
     private readonly exportRepository: Repository<Export>,
     @InjectRepository(ExportItem)
     private readonly exportItemRepository: Repository<ExportItem>,
+    private readonly documentService: PdfGenerationService,
   ) {}
 
   async create(
@@ -280,10 +282,34 @@ export class RequestService {
       }
     }
 
+    const generatedDocument =
+      await this.documentService.generateFicheExpeditionForDemande(
+        requestEntity,
+      );
+
     requestEntity.confirmed = true;
+    requestEntity.ficheExpedition = generatedDocument.filename;
     const confirmedRequest = await this.requestRepository.save(requestEntity);
 
     return successResponse(confirmedRequest, 'Demande confirmée avec succès');
+  }
+
+  async findOne(id: number): Promise<SuccessResponse<ProductRequest>> {
+    const requestEntity = await this.requestRepository.findOne({
+      where: { id } as FindOptionsWhere<ProductRequest>,
+      relations: [
+        'requestItems',
+        'requestItems.product',
+        'constructionSite',
+        'account',
+      ],
+    });
+
+    if (!requestEntity) {
+      throw new NotFoundException(`Demande avec l'ID ${id} introuvable`);
+    }
+
+    return successResponse(requestEntity, 'Demande récupérée avec succès');
   }
 
   async turnIntoExport(

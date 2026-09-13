@@ -29,6 +29,7 @@ import {
 import { NotificationsService } from '../notifications-module/notifications.service';
 import { NotificationType } from '../notifications-module/enums/notification-type.enum';
 import { ConfirmReturnDto } from './dto/confirm-return.dto';
+import { PdfGenerationService } from 'src/common/document-generation/document-generation.service';
 
 @Injectable()
 export class ProductReturnService {
@@ -45,6 +46,7 @@ export class ProductReturnService {
     private readonly accountRepository: Repository<Account>,
     private readonly configService: ConfigService,
     private readonly notificationsService: NotificationsService,
+    private readonly documentService: PdfGenerationService,
   ) {}
 
   async create(createDto: CreateReturnDto): Promise<SuccessResponse<Return>> {
@@ -232,17 +234,29 @@ export class ProductReturnService {
       throw new NotFoundException(`Retour avec l'ID ${id} introuvable`);
     }
 
-    if (returnEntity.confirmed) {
-      throw new ConflictException(
-        'Impossible de supprimer un retour déjà confirmé',
-      );
-    }
-
     await this.returnRepository.remove(returnEntity);
     return successResponse(null, 'Retour supprimé avec succès');
   }
 
   // Inside ProductReturnService class
+
+  async findOne(id: number): Promise<SuccessResponse<Return>> {
+    const returnEntity = await this.returnRepository.findOne({
+      where: { id } as FindOptionsWhere<Return>,
+      relations: [
+        'returnItems',
+        'returnItems.product',
+        'constructionSite',
+        'account',
+      ],
+    });
+
+    if (!returnEntity) {
+      throw new NotFoundException(`Retour avec l'ID ${id} introuvable`);
+    }
+
+    return successResponse(returnEntity, 'Retour récupéré avec succès');
+  }
 
   async confirm(
     id: number,
@@ -303,15 +317,19 @@ export class ProductReturnService {
           product.stock =
             Number(product.stock) + Number(returnItem.returnedStock);
           await this.productRepository.save(product);
-
-          // Optional: notify if stock goes above minimum after restock (good news)
-          // Not strictly needed, but you could add a notification.
         }
       }
     }
 
-    // 5. Mark return as confirmed
+    const generatedDocument =
+      await this.documentService.generateBonDeRetourForRetour(returnEntity);
+
+    // 5. Attach transporter information and mark as confirmed
+    returnEntity.transporterName = confirmDto.transporterName;
+    returnEntity.transporterMatricule = confirmDto.transporterMatricule;
     returnEntity.confirmed = true;
+    returnEntity.bonRetour = generatedDocument.filename;
+
     const confirmedReturn = await this.returnRepository.save(returnEntity);
 
     // 6. Reload with relations for response

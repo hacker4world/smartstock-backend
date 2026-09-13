@@ -32,13 +32,20 @@ export class ProductRequest {
   })
   requestItems: RequestItem[];
 
-  @ManyToOne(() => ConstructionSite, { nullable: true, eager: true })
+  @ManyToOne(() => ConstructionSite, {
+    nullable: true,
+    eager: true,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'constructionSiteId' })
   constructionSite: ConstructionSite;
 
   @ManyToOne(() => Account, { nullable: true, eager: true })
   @JoinColumn({ name: 'accountId' })
   account: Account;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  ficheExpedition: string;
 
   @CreateDateColumn()
   createdAt: Date;

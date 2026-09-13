@@ -22,7 +22,11 @@ export class ReturnItem {
   @Column({ type: 'varchar', length: 500, nullable: true })
   reason: string;
 
-  @ManyToOne(() => Product, { nullable: false, eager: true })
+  @ManyToOne(() => Product, {
+    nullable: false,
+    eager: true,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'productId' })
   product: Product;
 
