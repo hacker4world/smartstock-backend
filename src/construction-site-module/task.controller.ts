@@ -15,6 +15,7 @@ import { UpdateTaskStatusDto } from './dto/update-task-status.dto';
 import { SuccessResponse } from '../common/utils/success-response';
 import { Task } from './entities/task.entity';
 import { PermissionsGuard } from 'src/common/guards/permissions.guard';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RequirePermission } from 'src/common/decorators/require-permission.decorator';
 import { PermissionName } from 'src/roles-module/permission.enum';
 
@@ -38,9 +39,36 @@ export class TaskController {
     return this.taskService.findAll();
   }
 
+  // ──────────────────────────────────────────────────────────────────────
+  // MOBILE APP ENDPOINT
+  // Only protected by authentication (JwtAuthGuard), no role-based
+  // permission is required — mirrors /construction-sites/:id/products.
+  // ──────────────────────────────────────────────────────────────────────
+
+  /**
+   * Get all tasks associated with a specific construction site.
+   * GET /tasks/site/:siteId
+   */
+  @Get('site/:siteId')
+  @UseGuards(JwtAuthGuard)
+  findBySite(
+    @Param('siteId', ParseIntPipe) siteId: number,
+  ): Promise<SuccessResponse<Task[]>> {
+    return this.taskService.findByConstructionSite(siteId);
+  }
+
+  // ──────────────────────────────────────────────────────────────────────
+  // MOBILE APP ENDPOINT
+  // Only protected by authentication (JwtAuthGuard), no role-based
+  // permission is required — site workers may update their task statuses.
+  // ──────────────────────────────────────────────────────────────────────
+
+  /**
+   * Update the status of a specific task.
+   * PATCH /tasks/:id/status
+   */
   @Patch(':id/status')
-  @UseGuards(PermissionsGuard)
-  @RequirePermission(PermissionName.UPDATE_TASK_STATUS)
+  @UseGuards(JwtAuthGuard)
   updateStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateTaskStatusDto: UpdateTaskStatusDto,

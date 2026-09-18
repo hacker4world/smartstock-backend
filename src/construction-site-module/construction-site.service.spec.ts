@@ -7,6 +7,7 @@ import { ConstructionSite } from './entities/construction-site.entity';
 import { Account } from '../accounts-module/entities/account.entity';
 import { Export } from '../import-export-module/entities/export.entity';
 import { Return } from '../request-return-module/entities/return.entity';
+import { ReturnItem } from '../request-return-module/entities/return-item.entity';
 import { ProductRequest } from '../request-return-module/entities/request.entity';
 import { Product } from '../product-module/entities/product.entity';
 import { ExportItem } from '../import-export-module/entities/export-item.entity';
@@ -28,7 +29,7 @@ describe('ConstructionSiteService', () => {
         { provide: getRepositoryToken(ConstructionSite), useValue: { find: jest.fn(), findOne: jest.fn(), findAndCount: jest.fn(), create: jest.fn(), save: jest.fn(), remove: jest.fn() } },
         { provide: getRepositoryToken(Account), useValue: { findOne: jest.fn() } },
         { provide: getRepositoryToken(Export), useValue: { find: jest.fn(), findAndCount: jest.fn() } },
-        { provide: getRepositoryToken(Return), useValue: { findAndCount: jest.fn() } },
+        { provide: getRepositoryToken(Return), useValue: { find: jest.fn(), findAndCount: jest.fn() } },
         { provide: getRepositoryToken(ProductRequest), useValue: { findAndCount: jest.fn() } },
         { provide: ConfigService, useValue: mockConfigService },
       ],
@@ -141,6 +142,116 @@ describe('ConstructionSiteService', () => {
       exportRepository.find.mockResolvedValue([]);
 
       const result = await service.findProductsBySite(1);
+
+      expect(result.data).toEqual([]);
+    });
+  });
+
+  describe('findSiteStock', () => {
+    const product: Partial<Product> = {
+      id: 2,
+      name: 'Sable de construction',
+      stock: 149,
+      minimumStock: 15,
+      averagePrice: 181.29,
+      unit: undefined,
+      warehouse: undefined,
+      category: undefined,
+    };
+
+    it('throws when the site does not exist', async () => {
+      constructionSiteRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.findSiteStock(9999)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('computes available stock as delivered minus confirmed and pending returns', async () => {
+      constructionSiteRepository.findOne.mockResolvedValue({
+        id: 1,
+      } as ConstructionSite);
+
+      const returnRepository = {
+        find: jest.fn(),
+      } as any;
+      // findSiteStock resolves the Return repository through injection; the
+      // test module provides it above, so reach it via the private token.
+      const moduleReturnRepository = service as unknown as {
+        returnRepository: typeof returnRepository;
+      };
+      moduleReturnRepository.returnRepository = returnRepository;
+
+      exportRepository.find.mockResolvedValue([
+        {
+          exportItems: [{ product, exitedStock: 50 } as ExportItem],
+        } as Export,
+      ]);
+      returnRepository.find.mockResolvedValue([
+        {
+          confirmed: true,
+          returnItems: [{ product, returnedStock: 15 } as ReturnItem],
+        } as Return,
+        {
+          confirmed: false,
+          returnItems: [{ product, returnedStock: 5 } as ReturnItem],
+        } as Return,
+      ]);
+
+      const result = await service.findSiteStock(1);
+
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].product.id).toBe(2);
+      expect(result.data[0].totalLivre).toBe(50);
+      expect(result.data[0].totalRetourne).toBe(15);
+      expect(result.data[0].enAttenteRetour).toBe(5);
+      expect(result.data[0].quantiteDisponible).toBe(30);
+    });
+
+    it('never reports negative availability', async () => {
+      constructionSiteRepository.findOne.mockResolvedValue({
+        id: 1,
+      } as ConstructionSite);
+
+      const returnRepository = { find: jest.fn() } as any;
+      const moduleReturnRepository = service as unknown as {
+        returnRepository: typeof returnRepository;
+      };
+      moduleReturnRepository.returnRepository = returnRepository;
+
+      exportRepository.find.mockResolvedValue([
+        {
+          exportItems: [{ product, exitedStock: 10 } as ExportItem],
+        } as Export,
+      ]);
+      returnRepository.find.mockResolvedValue([
+        {
+          confirmed: true,
+          returnItems: [{ product, returnedStock: 20 } as ReturnItem],
+        } as Return,
+      ]);
+
+      const result = await service.findSiteStock(1);
+
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].quantiteDisponible).toBe(0);
+    });
+
+    it('returns an empty list when the site has no confirmed export', async () => {
+      constructionSiteRepository.findOne.mockResolvedValue({
+        id: 1,
+      } as ConstructionSite);
+
+      const returnRepository = { find: jest.fn() } as any;
+      const moduleReturnRepository = service as unknown as {
+        returnRepository: typeof returnRepository;
+      };
+      moduleReturnRepository.returnRepository = returnRepository;
+
+      exportRepository.find.mockResolvedValue([]);
+      returnRepository.find.mockResolvedValue([]);
+
+      const result = await service.findSiteStock(1);
 
       expect(result.data).toEqual([]);
     });

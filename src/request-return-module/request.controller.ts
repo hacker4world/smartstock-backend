@@ -72,6 +72,35 @@ export class ProductRequestController {
     return this.productRequestService.findFiltered(listDto);
   }
 
+  /**
+   * List the requests filed by the authenticated account (mobile app).
+   * The account is resolved from the JWT, so it is not part of the payload.
+   * Only protected by authentication, no role-based permission required.
+   * GET /product-request/my-requests?page=1&pageSize=20
+   */
+  @Get('my-requests')
+  @UseGuards(JwtAuthGuard)
+  async findMyRequests(
+    @Req() req: Request,
+    @Query('page') page?: number,
+    @Query('pageSize') pageSize?: number,
+  ): Promise<
+    SuccessResponse<{
+      items: ProductRequest[];
+      total: number;
+      page: number;
+      pageSize: number;
+      lastPage: boolean;
+    }>
+  > {
+    const account = req['user'] as Account;
+    return this.productRequestService.findMyRequests(
+      account.id,
+      page ? +page : 1,
+      pageSize ? +pageSize : undefined,
+    );
+  }
+
   @Get(':id')
   @UseGuards(PermissionsGuard)
   @RequirePermission(PermissionName.VIEW_REQUEST)

@@ -48,6 +48,28 @@ export class TaskService {
     return successResponse(tasks, 'Tâches récupérées avec succès');
   }
 
+  // MOBILE APP ENDPOINT
+  // Only protected by authentication (JwtAuthGuard), no role-based
+  // permission is required — mirrors /construction-sites/:id/products.
+  async findByConstructionSite(
+    siteId: number,
+  ): Promise<SuccessResponse<Task[]>> {
+    const site = await this.constructionSiteRepository.findOne({
+      where: { id: siteId },
+    });
+    if (!site) {
+      throw new NotFoundException(
+        `Chantier avec l'ID ${siteId} introuvable`,
+      );
+    }
+
+    const tasks = await this.taskRepository.find({
+      where: { constructionSiteId: siteId },
+      order: { deadline: 'ASC', id: 'DESC' },
+    });
+    return successResponse(tasks, 'Tâches récupérées avec succès');
+  }
+
   async findOne(id: number): Promise<SuccessResponse<Task>> {
     const task = await this.taskRepository.findOne({
       where: { id },

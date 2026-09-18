@@ -162,6 +162,33 @@ export class RequestService {
     });
   }
 
+  /**
+   * List the requests filed by the given account (mobile app history).
+   *
+   * Reuses findFiltered with an accountId filter so pagination and ordering
+   * stay consistent with the dashboard. Only protected by authentication,
+   * no role-based permission required.
+   */
+  async findMyRequests(
+    accountId: number,
+    page: number = 1,
+    pageSize?: number,
+  ): Promise<
+    SuccessResponse<{
+      items: ProductRequest[];
+      total: number;
+      page: number;
+      pageSize: number;
+      lastPage: boolean;
+    }>
+  > {
+    return this.findFiltered({
+      page,
+      pageSize,
+      filters: { accountId },
+    });
+  }
+
   async findFiltered(listDto: ListProductRequestDto): Promise<
     SuccessResponse<{
       items: ProductRequest[];

@@ -21,6 +21,7 @@ import { Product } from '../product-module/entities/product.entity';
 import { ConstructionSite } from '../construction-site-module/entities/construction-site.entity';
 import { Account } from '../accounts-module/entities/account.entity';
 import { CreateReturnDto } from './dto/create-return.dto';
+import { CreateMobileReturnDto } from './dto/create-mobile-return.dto';
 import { ListReturnDto } from './dto/list-return.dto';
 import {
   SuccessResponse,
@@ -127,6 +128,53 @@ export class ProductReturnService {
     });
 
     return successResponse(returnWithRelations!, 'Retour créé avec succès');
+  }
+
+  /**
+   * Create a product return from the mobile app.
+   *
+   * The account is resolved from the authenticated user's JWT instead of
+   * being provided in the body, and the date defaults to today when omitted.
+   * Only protected by authentication, no role-based permission required.
+   */
+  async createForAccount(
+    accountId: number,
+    createDto: CreateMobileReturnDto,
+  ): Promise<SuccessResponse<Return>> {
+    return this.create({
+      date: createDto.date ?? new Date().toISOString().split('T')[0],
+      observation: createDto.observation,
+      constructionSiteId: createDto.constructionSiteId,
+      accountId,
+      returnItems: createDto.returnItems,
+    });
+  }
+
+  /**
+   * List the returns filed by the given account (mobile app history).
+   *
+   * Reuses findFiltered with an accountId filter so pagination and ordering
+   * stay consistent with the dashboard. Only protected by authentication,
+   * no role-based permission required.
+   */
+  async findMyReturns(
+    accountId: number,
+    page: number = 1,
+    pageSize?: number,
+  ): Promise<
+    SuccessResponse<{
+      items: Return[];
+      total: number;
+      page: number;
+      pageSize: number;
+      lastPage: boolean;
+    }>
+  > {
+    return this.findFiltered({
+      page,
+      pageSize,
+      filters: { accountId },
+    });
   }
 
   async findFiltered(listDto: ListReturnDto): Promise<

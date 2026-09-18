@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { Repository, ILike, Not, IsNull } from 'typeorm';
 import { ConstructionSite } from './entities/construction-site.entity';
 import { Account } from '../accounts-module/entities/account.entity';
+import { Product } from '../product-module/entities/product.entity';
 import { CreateConstructionSiteDto } from './dto/create-construction-site.dto';
 import { UpdateConstructionSiteDto } from './dto/update-construction-site.dto';
 import { ListConstructionSiteDto } from './dto/list-construction-site.dto';
@@ -329,5 +330,108 @@ export class ConstructionSiteService {
       [...productMap.values()],
       'Produits du chantier récupérés avec succès',
     );
+  }
+
+  /**
+   * Returns the stock available for return on a construction site, per
+   * product, for the mobile app's return screen.
+   *
+   * For each product delivered to the site through confirmed exports:
+   *   - totalLivre      : total delivered through confirmed exports
+   *   - totalRetourne   : total already returned through confirmed returns
+   *   - enAttenteRetour : total in pending (not yet confirmed) returns
+   *   - quantiteDisponible: totalLivre - totalRetourne - enAttenteRetour
+   *
+   * Only protected by authentication, no role-based permission required.
+   */
+  async findSiteStock(siteId: number): Promise<
+    SuccessResponse<
+      {
+        product: Product;
+        totalLivre: number;
+        totalRetourne: number;
+        enAttenteRetour: number;
+        quantiteDisponible: number;
+      }[]
+    >
+  > {
+    await this.findOne(siteId); // ensure site exists
+
+    const confirmedExports = await this.exportRepository.find({
+      where: {
+        constructionSite: { id: siteId },
+        confirmed: true,
+      },
+      relations: ['exportItems', 'exportItems.product'],
+    });
+
+    const returns = await this.returnRepository.find({
+      where: { constructionSite: { id: siteId } },
+      relations: ['returnItems', 'returnItems.product'],
+    });
+
+    // Delivered quantities, aggregated per product across confirmed exports.
+    const deliveredMap = new Map<number, { product: Product; total: number }>();
+
+    for (const exportEntity of confirmedExports) {
+      for (const item of exportEntity.exportItems ?? []) {
+        const product = item.product;
+        if (!product) continue;
+
+        const existing = deliveredMap.get(product.id);
+        if (existing) {
+          existing.total += Number(item.exitedStock);
+        } else {
+          deliveredMap.set(product.id, {
+            product,
+            total: Number(item.exitedStock),
+          });
+        }
+      }
+    }
+
+    // Returned / pending quantities, aggregated per product.
+    const returnedMap = new Map<number, number>();
+    const pendingMap = new Map<number, number>();
+
+    for (const returnEntity of returns) {
+      const isConfirmed = returnEntity.confirmed === true;
+      for (const item of returnEntity.returnItems ?? []) {
+        if (!item.product) continue;
+
+        const qty = Number(item.returnedStock);
+        if (isConfirmed) {
+          returnedMap.set(
+            item.product.id,
+            (returnedMap.get(item.product.id) ?? 0) + qty,
+          );
+        } else {
+          pendingMap.set(
+            item.product.id,
+            (pendingMap.get(item.product.id) ?? 0) + qty,
+          );
+        }
+      }
+    }
+
+    const stock = [...deliveredMap.entries()].map(([productId, entry]) => {
+      const totalLivre = entry.total;
+      const totalRetourne = returnedMap.get(productId) ?? 0;
+      const enAttenteRetour = pendingMap.get(productId) ?? 0;
+      const quantiteDisponible = Math.max(
+        0,
+        totalLivre - totalRetourne - enAttenteRetour,
+      );
+
+      return {
+        product: entry.product,
+        totalLivre,
+        totalRetourne,
+        enAttenteRetour,
+        quantiteDisponible,
+      };
+    });
+
+    return successResponse(stock, 'Stock du chantier récupéré avec succès');
   }
 }
