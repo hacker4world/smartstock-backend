@@ -1,12 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
-import { Repository, ILike } from 'typeorm';
+import { Repository, ILike, Not, IsNull } from 'typeorm';
 import { ConstructionSite } from './entities/construction-site.entity';
 import { Account } from '../accounts-module/entities/account.entity';
 import { CreateConstructionSiteDto } from './dto/create-construction-site.dto';
 import { UpdateConstructionSiteDto } from './dto/update-construction-site.dto';
 import { ListConstructionSiteDto } from './dto/list-construction-site.dto';
+import { SiteProductDto } from './dto/site-product.dto';
 import {
   SuccessResponse,
   successResponse,
@@ -224,6 +225,109 @@ export class ConstructionSiteService {
     return successResponse(
       { items, total, page, pageSize: limit },
       'Demandes récupérées avec succès',
+    );
+  }
+
+  // ========== MOBILE APP ENDPOINTS ==========
+  // These endpoints are only protected by authentication (JwtAuthGuard),
+  // no role-based permission is required.
+
+  /**
+   * Returns every construction site associated with the given account.
+   *
+   * A site is associated with an account when the account is the site's
+   * manager, OR when the account created at least one export towards that
+   * site (exports created from a request keep the request's account).
+   */
+  async findSitesByAccount(accountId: number): Promise<
+    SuccessResponse<ConstructionSite[]>
+  > {
+    const [managedSites, exportSites] = await Promise.all([
+      this.constructionSiteRepository.find({
+        where: { manager: { id: accountId } },
+        relations: ['manager'],
+        order: { createdAt: 'DESC' },
+      }),
+      this.exportRepository.find({
+        where: {
+          account: { id: accountId },
+          constructionSite: Not(IsNull()),
+        },
+        relations: ['constructionSite', 'constructionSite.manager'],
+      }),
+    ]);
+
+    // Merge both sources, keeping the first occurrence of each site.
+    const seenIds = new Set<number>();
+    const sites: ConstructionSite[] = [];
+
+    for (const site of [...managedSites, ...exportSites.map((e) => e.constructionSite!)]) {
+      if (site && !seenIds.has(site.id)) {
+        seenIds.add(site.id);
+        sites.push(site);
+      }
+    }
+
+    return successResponse(sites, 'Chantiers récupérés avec succès');
+  }
+
+  /**
+   * Returns every product that the given construction site "has".
+   *
+   * A site is considered to have a product when there is at least one
+   * CONFIRMED export to that construction site containing the product in
+   * its items. Each returned product carries the total quantity delivered
+   * to the site through confirmed exports.
+   */
+  async findProductsBySite(siteId: number): Promise<
+    SuccessResponse<SiteProductDto[]>
+  > {
+    await this.findOne(siteId); // ensure site exists
+
+    const exports = await this.exportRepository.find({
+      where: {
+        constructionSite: { id: siteId },
+        confirmed: true,
+      },
+      relations: ['exportItems', 'exportItems.product'],
+    });
+
+    // Aggregate quantities per product across all confirmed exports.
+    const productMap = new Map<number, SiteProductDto>();
+
+    for (const exportEntity of exports) {
+      for (const item of exportEntity.exportItems ?? []) {
+        const product = item.product;
+        if (!product) continue;
+
+        const existing = productMap.get(product.id);
+        if (existing) {
+          existing.quantiteLivre += Number(item.exitedStock);
+        } else {
+          productMap.set(product.id, {
+            id: product.id,
+            name: product.name,
+            stock: Number(product.stock),
+            minimumStock: Number(product.minimumStock),
+            averagePrice: Number(product.averagePrice),
+            unit: product.unit
+              ? { id: product.unit.id, name: product.unit.name }
+              : null,
+            warehouse: product.warehouse
+              ? { id: product.warehouse.id, name: product.warehouse.name }
+              : null,
+            category: product.category
+              ? { id: product.category.id, name: product.category.name }
+              : null,
+            quantiteLivre: Number(item.exitedStock),
+          });
+        }
+      }
+    }
+
+    return successResponse(
+      [...productMap.values()],
+      'Produits du chantier récupérés avec succès',
     );
   }
 }

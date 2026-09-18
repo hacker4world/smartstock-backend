@@ -18,6 +18,7 @@ import { ExportItem } from 'src/import-export-module/entities/export-item.entity
 import { Return } from './entities/return.entity';
 import { ReturnItem } from './entities/return-item.entity';
 import { DocumentModule } from 'src/common/document-generation/documents.module';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -39,7 +40,7 @@ import { DocumentModule } from 'src/common/document-generation/documents.module'
     DocumentModule
   ],
   controllers: [ProductRequestController, ReturnController],
-  providers: [RequestService, ProductReturnService],
+  providers: [RequestService, ProductReturnService, JwtAuthGuard],
   exports: [],
 })
 export class RequestReturnModule {}

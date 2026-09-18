@@ -21,6 +21,7 @@ import { Product } from '../product-module/entities/product.entity';
 import { ConstructionSite } from '../construction-site-module/entities/construction-site.entity';
 import { Account } from '../accounts-module/entities/account.entity';
 import { CreateProductRequestDto } from './dto/create-product-request.dto';
+import { CreateMobileProductRequestDto } from './dto/create-mobile-product-request.dto';
 import { ListProductRequestDto } from './dto/list-product-request.dto';
 import {
   SuccessResponse,
@@ -139,6 +140,26 @@ export class RequestService {
     });
 
     return successResponse(requestWithRelations!, 'Demande créée avec succès');
+  }
+
+  /**
+   * Create a product request from the mobile app.
+   *
+   * The account is resolved from the authenticated user's JWT instead of
+   * being provided in the body, and the date defaults to today when omitted.
+   * Only protected by authentication, no role-based permission required.
+   */
+  async createForAccount(
+    accountId: number,
+    createDto: CreateMobileProductRequestDto,
+  ): Promise<SuccessResponse<ProductRequest>> {
+    return this.create({
+      date: createDto.date ?? new Date().toISOString().split('T')[0],
+      observation: createDto.observation,
+      constructionSiteId: createDto.constructionSiteId,
+      accountId,
+      requestItems: createDto.requestItems,
+    });
   }
 
   async findFiltered(listDto: ListProductRequestDto): Promise<

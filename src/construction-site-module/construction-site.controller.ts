@@ -8,20 +8,25 @@ import {
   Param,
   ParseIntPipe,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { ConstructionSiteService } from './construction-site.service';
 import { CreateConstructionSiteDto } from './dto/create-construction-site.dto';
 import { UpdateConstructionSiteDto } from './dto/update-construction-site.dto';
 import { ListConstructionSiteDto } from './dto/list-construction-site.dto';
+import { SiteProductDto } from './dto/site-product.dto';
 import { SuccessResponse } from '../common/utils/success-response';
 import { ConstructionSite } from './entities/construction-site.entity';
 import { Export } from 'src/import-export-module/entities/export.entity';
 import { Return } from 'src/request-return-module/entities/return.entity';
 import { ProductRequest } from 'src/request-return-module/entities/request.entity';
 import { PermissionsGuard } from 'src/common/guards/permissions.guard';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RequirePermission } from 'src/common/decorators/require-permission.decorator';
 import { PermissionName } from 'src/roles-module/permission.enum';
+import { Account } from 'src/accounts-module/entities/account.entity';
+import type { Request } from 'express';
 
 @Controller('construction-sites')
 export class ConstructionSiteController {
@@ -56,6 +61,41 @@ export class ConstructionSiteController {
   > {
     return this.constructionSiteService.findFiltered(listConstructionSiteDto);
   }
+
+  // ──────────────────────────────────────────────────────────────────────
+  // MOBILE APP ENDPOINTS
+  // Only protected by authentication (JwtAuthGuard), no role-based
+  // permission is required for now.
+  // ──────────────────────────────────────────────────────────────────────
+
+  /**
+   * Get all construction sites associated with the authenticated account.
+   * GET /construction-sites/my-sites
+   */
+  @Get('my-sites')
+  @UseGuards(JwtAuthGuard)
+  getMySites(
+    @Req() req: Request,
+  ): Promise<SuccessResponse<ConstructionSite[]>> {
+    const account = req['user'] as Account;
+    return this.constructionSiteService.findSitesByAccount(account.id);
+  }
+
+  /**
+   * Get all products associated with a specific construction site.
+   * A site is considered to have a product if there is a confirmed export
+   * to that site containing the product in its items.
+   * GET /construction-sites/:id/products
+   */
+  @Get(':id/products')
+  @UseGuards(JwtAuthGuard)
+  getSiteProducts(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<SuccessResponse<SiteProductDto[]>> {
+    return this.constructionSiteService.findProductsBySite(id);
+  }
+
+  // ──────────────────────────────────────────────────────────────────────
 
   // NEW ENDPOINTS – placed before the :id route to avoid conflicts
   @Get(':id/exports')
