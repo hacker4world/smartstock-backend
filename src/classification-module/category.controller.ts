@@ -16,6 +16,7 @@ import { ListCategoryDto } from './dto/list-category.dto';
 import { SuccessResponse } from '../common/utils/success-response';
 import { Category } from './entities/category.entity';
 import { PermissionsGuard } from 'src/common/guards/permissions.guard';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RequirePermission } from 'src/common/decorators/require-permission.decorator';
 import { PermissionName } from 'src/roles-module/permission.enum';
 
@@ -35,6 +36,12 @@ export class CategoryController {
   @Get()
   findAll(): Promise<SuccessResponse<Category[]>> {
     return this.categoryService.findAll();
+  }
+
+  @Get('options')
+  @UseGuards(JwtAuthGuard)
+  findAllOptions(): Promise<SuccessResponse<{ id: number; name: string }[]>> {
+    return this.categoryService.findAllOptions();
   }
 
   @Post('list')

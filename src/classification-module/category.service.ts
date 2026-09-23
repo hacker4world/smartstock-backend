@@ -49,6 +49,29 @@ export class CategoryService {
     return successResponse(categories, 'Catégories récupérées avec succès');
   }
 
+  /**
+   * Lightweight list used to populate select inputs: returns every category's
+   * id and name only, without pagination and without loading any relationship.
+   *
+   * Uses the query builder (rather than `find({ select })`) because the
+   * `subfamily` relation is `eager` — a plain `find` would join and serialize
+   * it back into the response regardless of `select`.
+   */
+  async findAllOptions(): Promise<
+    SuccessResponse<{ id: number; name: string }[]>
+  > {
+    const categories = await this.categoryRepository
+      .createQueryBuilder('category')
+      .select(['category.id', 'category.name'])
+      .orderBy('category.name', 'ASC')
+      .getRawMany();
+
+    return successResponse(
+      categories,
+      'Catégories récupérées avec succès',
+    );
+  }
+
   async findFiltered(listCategoryDto: ListCategoryDto): Promise<
     SuccessResponse<{
       items: Category[];

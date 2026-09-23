@@ -9,11 +9,16 @@ import { CategoryController } from './category.controller';
 import { FamilyService } from './family.service';
 import { SubfamilyService } from './subfamily.service';
 import { CategoryService } from './category.service';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { PermissionsModule } from '../common/permissions/permissions.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Family, Subfamily, Category])],
+  imports: [
+    TypeOrmModule.forFeature([Family, Subfamily, Category]),
+    PermissionsModule,
+  ],
   controllers: [FamilyController, SubfamilyController, CategoryController],
-  providers: [FamilyService, SubfamilyService, CategoryService],
+  providers: [FamilyService, SubfamilyService, CategoryService, JwtAuthGuard],
   exports: [FamilyService, SubfamilyService, CategoryService],
 })
 export class ClassificationModule {}

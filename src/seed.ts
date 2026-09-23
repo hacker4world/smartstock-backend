@@ -105,10 +105,12 @@ async function bootstrap() {
     console.log(
       'ℹ️  Super admin account already exists, skipping account creation.',
     );
-    // ── Create 20 fake products ──
-    const existingProducts = await productRepository.count();
+  }
 
-    if (existingProducts === 0) {
+  // ── Create 50 fake products (skipped if any product already exists) ──
+  const existingProducts = await productRepository.count();
+
+  if (existingProducts === 0) {
       // Fetch existing related entities to attach to the products (if any)
       const units = await unitRepository.find();
       const warehouses = await warehouseRepository.find();
@@ -136,6 +138,36 @@ async function bootstrap() {
         'Robinet de lavabo',
         'WC suspendu',
         'Lavabo céramique',
+        'Mortier colle',
+        'Chape de ravoirage',
+        'Fer à béton 8mm',
+        'Fer à béton 16mm',
+        'Treillis soudé 6mm',
+        'Brique creuse 20x20',
+        'Parpaing 20x20x40',
+        'Joints de carrelage',
+        'Imperméabilisant',
+        'Colle à papier peint',
+        'Cornière en aluminium',
+        'Tube en cuivre 14mm',
+        'Raccord PVC 90°',
+        'Mastique 40Kg',
+        'Colle néoprène',
+        'Vernis à bois',
+        'Diluant à peinture',
+        'Bâche de protection',
+        'Échafaudage en métal',
+        'Brouette en métal',
+        'Truelle',
+        'Auge à mortier',
+        'Niveau à bulle 1m',
+        'Mètre ruban 5m',
+        'Perceuse sans fil',
+        'Disque à tronçonner',
+        'Gants de protection',
+        'Lunettes de sécurité',
+        'Casque de chantier',
+        'Veste haute visibilité',
       ];
 
       const products = productNames.map((name, index) => {
@@ -162,13 +194,15 @@ async function bootstrap() {
 
       await productRepository.save(products);
       console.log(`✅ ${products.length} fake products created.`);
+
+      await app.close();
     } else {
       console.log(
         `ℹ️  ${existingProducts} products already exist, skipping product seeding.`,
       );
-    }
 
-    await app.close();
+      await app.close();
+    }
   }
 }
 
