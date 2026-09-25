@@ -56,13 +56,17 @@ export class CategoryService {
    * Uses the query builder (rather than `find({ select })`) because the
    * `subfamily` relation is `eager` — a plain `find` would join and serialize
    * it back into the response regardless of `select`.
+   *
+   * Columns are aliased explicitly (`AS id` / `AS name`) because
+   * `getRawMany()` otherwise prefixes every key with the alias of the table
+   * (`category_id`, `category_name`), which the frontend does not expect.
    */
   async findAllOptions(): Promise<
     SuccessResponse<{ id: number; name: string }[]>
   > {
     const categories = await this.categoryRepository
       .createQueryBuilder('category')
-      .select(['category.id', 'category.name'])
+      .select(['category.id AS id', 'category.name AS name'])
       .orderBy('category.name', 'ASC')
       .getRawMany();
 

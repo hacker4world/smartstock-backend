@@ -111,98 +111,95 @@ async function bootstrap() {
   const existingProducts = await productRepository.count();
 
   if (existingProducts === 0) {
-      // Fetch existing related entities to attach to the products (if any)
-      const units = await unitRepository.find();
-      const warehouses = await warehouseRepository.find();
-      const categories = await categoryRepository.find();
-      const suppliers = await supplierRepository.find();
+    // Fetch existing related entities to attach to the products (if any)
+    const units = await unitRepository.find();
+    const warehouses = await warehouseRepository.find();
+    const categories = await categoryRepository.find();
+    const suppliers = await supplierRepository.find();
 
-      const productNames = [
-        'Ciment Portland 42.5',
-        'Sable de construction',
-        'Gravier concassé',
-        'Fer à béton 12mm',
-        'Briques rouges',
-        'Carrelage 60x60',
-        'Peinture acrylique blanche',
-        'Enduit de façade',
-        'Tuyau PVC 110mm',
-        'Câble électrique 2.5mm²',
-        'Interrupteur simple',
-        'Prise de courant double',
-        'Plaque de plâtre BA13',
-        'Laine de verre',
-        'Parquet stratifié',
-        'Porte intérieure en bois',
-        'Fenêtre PVC double vitrage',
-        'Robinet de lavabo',
-        'WC suspendu',
-        'Lavabo céramique',
-        'Mortier colle',
-        'Chape de ravoirage',
-        'Fer à béton 8mm',
-        'Fer à béton 16mm',
-        'Treillis soudé 6mm',
-        'Brique creuse 20x20',
-        'Parpaing 20x20x40',
-        'Joints de carrelage',
-        'Imperméabilisant',
-        'Colle à papier peint',
-        'Cornière en aluminium',
-        'Tube en cuivre 14mm',
-        'Raccord PVC 90°',
-        'Mastique 40Kg',
-        'Colle néoprène',
-        'Vernis à bois',
-        'Diluant à peinture',
-        'Bâche de protection',
-        'Échafaudage en métal',
-        'Brouette en métal',
-        'Truelle',
-        'Auge à mortier',
-        'Niveau à bulle 1m',
-        'Mètre ruban 5m',
-        'Perceuse sans fil',
-        'Disque à tronçonner',
-        'Gants de protection',
-        'Lunettes de sécurité',
-        'Casque de chantier',
-        'Veste haute visibilité',
-      ];
+    const productNames = [
+      'Ciment Portland 42.5',
+      'Sable de construction',
+      'Gravier concassé',
+      'Fer à béton 12mm',
+      'Briques rouges',
+      'Carrelage 60x60',
+      'Peinture acrylique blanche',
+      'Enduit de façade',
+      'Tuyau PVC 110mm',
+      'Câble électrique 2.5mm²',
+      'Interrupteur simple',
+      'Prise de courant double',
+      'Plaque de plâtre BA13',
+      'Laine de verre',
+      'Parquet stratifié',
+      'Porte intérieure en bois',
+      'Fenêtre PVC double vitrage',
+      'Robinet de lavabo',
+      'WC suspendu',
+      'Lavabo céramique',
+      'Mortier colle',
+      'Chape de ravoirage',
+      'Fer à béton 8mm',
+      'Fer à béton 16mm',
+      'Treillis soudé 6mm',
+      'Brique creuse 20x20',
+      'Parpaing 20x20x40',
+      'Joints de carrelage',
+      'Imperméabilisant',
+      'Colle à papier peint',
+      'Cornière en aluminium',
+      'Tube en cuivre 14mm',
+      'Raccord PVC 90°',
+      'Mastique 40Kg',
+      'Colle néoprène',
+      'Vernis à bois',
+      'Diluant à peinture',
+      'Bâche de protection',
+      'Échafaudage en métal',
+      'Brouette en métal',
+      'Truelle',
+      'Auge à mortier',
+      'Niveau à bulle 1m',
+      'Mètre ruban 5m',
+      'Perceuse sans fil',
+      'Disque à tronçonner',
+      'Gants de protection',
+      'Lunettes de sécurité',
+      'Casque de chantier',
+      'Veste haute visibilité',
+    ];
 
-      const products = productNames.map((name, index) => {
-        const product = productRepository.create({
-          name,
-          stock: Math.round(Math.random() * 500),
-          minimumStock: 10 + (index % 5) * 5,
-          averagePrice: Math.round((5 + Math.random() * 200) * 100) / 100,
-          unit: units.length
-            ? { id: units[index % units.length].id }
-            : undefined,
-          warehouse: warehouses.length
-            ? { id: warehouses[index % warehouses.length].id }
-            : undefined,
-          category: categories.length
-            ? { id: categories[index % categories.length].id }
-            : undefined,
-          suppliers: suppliers.length
-            ? [{ id: suppliers[index % suppliers.length].id }]
-            : undefined,
-        });
-        return product;
+    const products = productNames.map((name, index) => {
+      const product = productRepository.create({
+        name,
+        stock: Math.round(Math.random() * 500),
+        minimumStock: 10 + (index % 5) * 5,
+        averagePrice: Math.round((5 + Math.random() * 200) * 100) / 100,
+        unit: units.length ? { id: units[index % units.length].id } : undefined,
+        warehouse: warehouses.length
+          ? { id: warehouses[index % warehouses.length].id }
+          : undefined,
+        category: categories.length
+          ? { id: categories[index % categories.length].id }
+          : undefined,
+        suppliers: suppliers.length
+          ? [{ id: suppliers[index % suppliers.length].id }]
+          : undefined,
       });
+      return product;
+    });
 
-      await productRepository.save(products);
-      console.log(`✅ ${products.length} fake products created.`);
+    await productRepository.save(products);
+    console.log(`✅ ${products.length} fake products created.`);
 
-      await app.close();
-    } else {
-      console.log(
-        `ℹ️  ${existingProducts} products already exist, skipping product seeding.`,
-      );
+    await app.close();
+  } else {
+    console.log(
+      `ℹ️  ${existingProducts} products already exist, skipping product seeding.`,
+    );
 
-      await app.close();
-    }
+    await app.close();
   }
 }
 
