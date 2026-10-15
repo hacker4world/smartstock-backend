@@ -17,6 +17,7 @@ import { SuccessResponse } from '../common/utils/success-response';
 import { Manufacturer } from './entities/manufacturer.entity';
 import { RequirePermission } from 'src/common/decorators/require-permission.decorator';
 import { PermissionsGuard } from 'src/common/guards/permissions.guard';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { PermissionName } from 'src/roles-module/permission.enum';
 
 @Controller('manufacturers')
@@ -35,6 +36,12 @@ export class ManufacturerController {
   @Get()
   findAll(): Promise<SuccessResponse<Manufacturer[]>> {
     return this.manufacturerService.findAll();
+  }
+
+  @Get('options')
+  @UseGuards(JwtAuthGuard)
+  findAllOptions(): Promise<SuccessResponse<{ id: number; name: string }[]>> {
+    return this.manufacturerService.findAllOptions();
   }
 
   @Post('list')

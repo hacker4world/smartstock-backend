@@ -17,6 +17,7 @@ import { SuccessResponse } from '../common/utils/success-response';
 import { Supplier } from './entities/supplier.entity';
 import { RequirePermission } from 'src/common/decorators/require-permission.decorator';
 import { PermissionsGuard } from 'src/common/guards/permissions.guard';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { PermissionName } from 'src/roles-module/permission.enum';
 
 @Controller('suppliers')
@@ -35,6 +36,12 @@ export class SupplierController {
   @Get()
   findAll(): Promise<SuccessResponse<Supplier[]>> {
     return this.supplierService.findAll();
+  }
+
+  @Get('options')
+  @UseGuards(JwtAuthGuard)
+  findAllOptions(): Promise<SuccessResponse<{ id: number; name: string }[]>> {
+    return this.supplierService.findAllOptions();
   }
 
   @Post('list')

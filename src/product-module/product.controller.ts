@@ -16,6 +16,7 @@ import { ListProductDto } from './dto/list-product.dto';
 import { SuccessResponse } from '../common/utils/success-response';
 import { Product } from './entities/product.entity';
 import { PermissionsGuard } from 'src/common/guards/permissions.guard';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { PermissionName } from 'src/roles-module/permission.enum';
 import { RequirePermission } from 'src/common/decorators/require-permission.decorator';
 
@@ -35,6 +36,12 @@ export class ProductController {
   @Get()
   findAll(): Promise<SuccessResponse<Product[]>> {
     return this.productService.findAll();
+  }
+
+  @Get('options')
+  @UseGuards(JwtAuthGuard)
+  findAllOptions(): Promise<SuccessResponse<{ id: number; name: string }[]>> {
+    return this.productService.findAllOptions();
   }
 
   @Post('list')

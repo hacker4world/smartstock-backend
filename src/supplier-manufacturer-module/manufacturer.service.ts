@@ -38,6 +38,28 @@ export class ManufacturerService {
     return successResponse(manufacturers, 'Fabricants récupérés avec succès');
   }
 
+  /**
+   * Lightweight list used to populate select inputs: returns every
+   * manufacturer's id and name only, without pagination and without loading
+   * any relationship.
+   *
+   * Columns are aliased explicitly (`AS id` / `AS name`) because
+   * `getRawMany()` otherwise prefixes every key with the alias of the table
+   * (`manufacturer_id`, `manufacturer_name`), which the frontend does not
+   * expect.
+   */
+  async findAllOptions(): Promise<
+    SuccessResponse<{ id: number; name: string }[]>
+  > {
+    const manufacturers = await this.manufacturerRepository
+      .createQueryBuilder('manufacturer')
+      .select(['manufacturer.id AS id', 'manufacturer.name AS name'])
+      .orderBy('manufacturer.name', 'ASC')
+      .getRawMany();
+
+    return successResponse(manufacturers, 'Fabricants récupérés avec succès');
+  }
+
   async findFiltered(listManufacturerDto: ListManufacturerDto): Promise<
     SuccessResponse<{
       items: Manufacturer[];

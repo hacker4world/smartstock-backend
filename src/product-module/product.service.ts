@@ -50,6 +50,28 @@ export class ProductService {
     return successResponse(products, 'Produits récupérés avec succès');
   }
 
+  /**
+   * Lightweight list used to populate select inputs: returns every product's
+   * id and name only, without pagination and without loading any relation
+   * (the `unit`, `warehouse`, `category` and `suppliers` joins used by
+   * `findFiltered` are all skipped here).
+   *
+   * Columns are aliased explicitly (`AS id` / `AS name`) because
+   * `getRawMany()` otherwise prefixes every key with the alias of the table
+   * (`product_id`, `product_name`), which the frontend does not expect.
+   */
+  async findAllOptions(): Promise<
+    SuccessResponse<{ id: number; name: string }[]>
+  > {
+    const products = await this.productRepository
+      .createQueryBuilder('product')
+      .select(['product.id AS id', 'product.name AS name'])
+      .orderBy('product.name', 'ASC')
+      .getRawMany();
+
+    return successResponse(products, 'Produits récupérés avec succès');
+  }
+
   async findFiltered(listProductDto: ListProductDto): Promise<
     SuccessResponse<{
       items: Product[];

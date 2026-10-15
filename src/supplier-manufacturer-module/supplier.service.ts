@@ -38,6 +38,26 @@ export class SupplierService {
     return successResponse(suppliers, 'Fournisseurs récupérés avec succès');
   }
 
+  /**
+   * Lightweight list used to populate select inputs: returns every supplier's
+   * id and name only, without pagination and without loading any relationship.
+   *
+   * Columns are aliased explicitly (`AS id` / `AS name`) because
+   * `getRawMany()` otherwise prefixes every key with the alias of the table
+   * (`supplier_id`, `supplier_name`), which the frontend does not expect.
+   */
+  async findAllOptions(): Promise<
+    SuccessResponse<{ id: number; name: string }[]>
+  > {
+    const suppliers = await this.supplierRepository
+      .createQueryBuilder('supplier')
+      .select(['supplier.id AS id', 'supplier.name AS name'])
+      .orderBy('supplier.name', 'ASC')
+      .getRawMany();
+
+    return successResponse(suppliers, 'Fournisseurs récupérés avec succès');
+  }
+
   async findFiltered(listSupplierDto: ListSupplierDto): Promise<
     SuccessResponse<{
       items: Supplier[];
